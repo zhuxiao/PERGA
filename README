@@ -10,7 +10,7 @@ by their overlapping k-mers.
 
 
 -------------
-Compiling SGA
+Compiling SRGA
 
 You can generate the binary file by typing:
 ./autogen.sh
