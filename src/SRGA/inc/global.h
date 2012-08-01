@@ -55,6 +55,7 @@ int readLenInFile;					// the read length in the data file
 int qualityBaseNumEnd3;				// checked base number at 3' end of reads
 int qualityBaseNumEnd5;				// checked base number at 5' end of reads
 int errorRegLenEnd3;				// erroneous region length of 3' end of a read
+int singleBaseQualThres;			// single base quality threshold
 
 int longKmerSize;
 int longKmerStepSize;

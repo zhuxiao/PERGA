@@ -34,18 +34,22 @@ int main(int argc, char** argv)
  *  			2 - reads are paired and are interleaved within a single file.
  *  	(4)-f <FILES>
  *  		Read files.
- *  	(5) -ins_len <FLOAT>
+ *  	(5) -q <INT>
+ *  		Single base quality threshold. Reads with single bases Phred quality < INT will be discarded. Default is 3.
+ *  	(6) -ins_len <FLOAT>
  *  		Insert size for paired end library.
- *  	(5) -ins_sdev <FLOAT>
+ *  	(7) -ins_sdev <FLOAT>
  *  		Standard deviation of insert size for paired end library. If not specified and the insert size is specified,
  *  		this value is set to 0.1*insertSize.
- *  	(6) -o <STR>
+ *  	(8) -g <FILE>
+ *  			Hash table file for assembly. It is required for the command 'assemble'.
+ *  	(9) -o <STR>
  *  		Prefix of the output files.
- *  	(7) -d <STR>
+ *  	(10) -d <STR>
  *  		Output directory for the output files. Default is "./".
- *  	(8) -m <INT>
+ *  	(11) -m <INT>
  *  		Minimum size of the contigs to output.
- *  	(9) -h (-help)
+ *  	(12) -h (-help)
  *  		Show help information.
  *
  *
@@ -67,6 +71,7 @@ short parseCommandParasAndExe(int argc, char **argv)
 	int operationModepara;
 	int kmerSizePara;
 	int readLenCutOffPara;
+	int singleBaseQualThresPara;
 	int pairedModePara;
 	double meanSizeInsertPara, standardDevPara;
 	int minContigLenPara;
@@ -128,6 +133,7 @@ short parseCommandParasAndExe(int argc, char **argv)
 		readFileNumPara = 0;
 		kmerSizePara = 0;
 		readLenCutOffPara = 0;
+		singleBaseQualThresPara = 0;
 		pairedModePara = 0;
 		meanSizeInsertPara = standardDevPara = 0;
 		minContigLenPara = 0;
@@ -268,6 +274,29 @@ short parseCommandParasAndExe(int argc, char **argv)
 					printf("Exception: please specify the read files.\n");
 					return FAILED;
 				}
+			}else if(strcmp(argv[i], "-q")==0)
+			{
+				if(i+1<argc)
+				{
+					if(argv[i+1][0]!='-')
+					{
+						singleBaseQualThresPara = atoi(argv[i+1]);
+						if(singleBaseQualThresPara<0)
+						{
+							printf("Exception: please specify the correct single base quality threshold.\n");
+							return FAILED;
+						}
+					}else
+					{
+						printf("Exception: please specify the single base quality threshold.\n");
+						return FAILED;
+					}
+				}else
+				{
+					printf("Exception: please specify the single base quality threshold.\n");
+					return FAILED;
+				}
+				i += 2;
 			}else if(strcmp(argv[i], "-g")==0)
 			{
 				if(i+1<argc)
@@ -277,12 +306,12 @@ short parseCommandParasAndExe(int argc, char **argv)
 						strcpy(graphFilePara, argv[i+1]);
 					}else
 					{
-						printf("Exception: please specify the output directory.\n");
+						printf("Exception: please specify the hash table file.\n");
 						return FAILED;
 					}
 				}else
 				{
-					printf("Exception: please specify the output directory.\n");
+					printf("Exception: please specify the hash table file.\n");
 					return FAILED;
 				}
 				i += 2;
@@ -445,7 +474,7 @@ short parseCommandParasAndExe(int argc, char **argv)
 
 
 		// begin to do the job
-		returnCode = startSRGA(operationModepara, kmerSizePara, readLenCutOffPara, pairedModePara, readFilesPara, readFileNumPara, graphFilePara, meanSizeInsertPara, standardDevPara, outputPathPara, outputPrefixPara, minContigLenPara);
+		returnCode = startSRGA(operationModepara, kmerSizePara, readLenCutOffPara, pairedModePara, readFilesPara, readFileNumPara, singleBaseQualThresPara, graphFilePara, meanSizeInsertPara, standardDevPara, outputPathPara, outputPrefixPara, minContigLenPara);
 		if(returnCode==FAILED)
 		{
 			printf("Please use -h or -help for more information.\n");
@@ -484,15 +513,17 @@ short showUsageInfo()
 		   "                       2 - reads are paired and interleaved within a single\n"
 		   "                       file.\n");
 	printf("    -f <FILES>         Read files. It is necessary to be specified for commands\n"
-			"                      'all' and 'graph'.\n");
+		   "                       'all' and 'graph'.\n");
+	printf("    -q <INT>           Single base quality threshold. Reads with single base\n"
+		   "                       Phred quality < INT will be discarded. Default is 3.\n");
 	printf("    -o <STR>           Prefix of the output files.\n");
 	printf("    -d <STR>           Output directory for the output files. Default is \"./\"\n");
 	printf("    -h\n");
 	printf("    -help              Show help information.\n");
 
 	printf("  2) assembly:\n");
-	printf("    -g <FILE>          Graph file for assembly. It is necessary to be specified\n"
-		   "                       for the command 'assemble'.\n");
+	printf("    -g <FILE>          Hash table file for assembly. It is required for the\n"
+		   "                       command 'assemble'.\n");
 	printf("    -ins_len <FLOAT>   Insert size for paired end library.\n");
 	printf("    -ins_sdev <FLOAT>  Standard deviation of insert size for paired end library.\n"
 		   "                       If it is not specified but the insert size is specified,\n"

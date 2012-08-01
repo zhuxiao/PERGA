@@ -51,6 +51,7 @@ extern int readLenCutOff;
 extern int qualityBaseNumEnd3;
 extern int qualityBaseNumEnd5;
 extern int errorRegLenEnd3;
+extern int singleBaseQualThres;			// single base quality threshold
 
 extern int longKmerSize;
 extern int longKmerStepSize;

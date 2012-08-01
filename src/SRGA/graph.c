@@ -1506,14 +1506,14 @@ short qualSatisfied(char *qual_data)
 	//for(i=0; i<READ_LEN-ERROR_REGION_LEN_3End; i++)
 	for(i=0; i<readLen; i++)
 	{
-		if(*p_qual-33 < SINGLE_QUAL_THRESHOLD)
+		if(*p_qual-33 < singleBaseQualThres)
 			return NO;
 		p_qual ++;
 	}
 /*
 	for(i=0; i<QUAL_BASE_NUM_5End; i++)
 	{
-		if(*p_qual-33 < SINGLE_QUAL_THRESHOLD)
+		if(*p_qual-33 < singleBaseQualThres)
 			return NO;
 		p_qual ++;
 	}
@@ -1521,7 +1521,7 @@ short qualSatisfied(char *qual_data)
 	p_qual = qual_data + READ_LEN - QUAL_BASE_NUM_3End;
 	for(i=0; i<QUAL_BASE_NUM_3End-ERROR_REGION_LEN_3End; i++)
 	{
-		if(*p_qual-33 < SINGLE_QUAL_THRESHOLD)
+		if(*p_qual-33 < singleBaseQualThres)
 			return NO;
 		p_qual ++;
 	}

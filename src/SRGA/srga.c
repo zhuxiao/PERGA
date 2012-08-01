@@ -8,7 +8,7 @@
  *  	if the job is executed and failed, return ERROR;
  *  	otherwise, return FAILED.
  **/
-short startSRGA(int operationModePara, int kmerSizePara, int readLenCutOffPara, int pairedModePara, char **readFilesPara, int readFileNumPara, char *graphFilePara, double meanSizeInsertPara, double standardDevPara, char *outputPathPara, char *outputPrefixPara, int minContigLenPara)
+short startSRGA(int operationModePara, int kmerSizePara, int readLenCutOffPara, int pairedModePara, char **readFilesPara, int readFileNumPara, int singleBaseQualThresPara, char *graphFilePara, double meanSizeInsertPara, double standardDevPara, char *outputPathPara, char *outputPrefixPara, int minContigLenPara)
 {
 	struct timeval tp_start,tp_end;
 	double time_used;
@@ -16,7 +16,7 @@ short startSRGA(int operationModePara, int kmerSizePara, int readLenCutOffPara, 
 
 	// initialize the global parameters
 	//if(initGlobalParas("../output/", "S.pombe_ERR018885", "../reads/SRR023412_1.fastq", "../reads/SRR023412_2.fastq", 21, 50)==FAILED)
-	if(initGlobalParas(operationModePara, outputPathPara, outputPrefixPara, readFilesPara, readFileNumPara, pairedModePara, kmerSizePara, readLenCutOffPara, graphFilePara, meanSizeInsertPara, standardDevPara, minContigLenPara)==FAILED)
+	if(initGlobalParas(operationModePara, outputPathPara, outputPrefixPara, readFilesPara, readFileNumPara, singleBaseQualThresPara, pairedModePara, kmerSizePara, readLenCutOffPara, graphFilePara, meanSizeInsertPara, standardDevPara, minContigLenPara)==FAILED)
 	{
 		//printf("line=%d, In %s(), cannot initialize the global parameters, error!\n", __LINE__, __func__);
 		return FAILED;
@@ -74,7 +74,7 @@ short startSRGA(int operationModePara, int kmerSizePara, int readLenCutOffPara, 
  *  @return:
  *  	If succeeds, return SUCCESSFUL; otherwise, return FAILED.
  */
-short initGlobalParas(int operationModePara, char *outputPathName, char *prefix, char **readFilesPara, int readFileNumPara, int pairedModePara, int kmerLen, int readLenCut, char *graphFilePara, double meanSizeInsertPara, double standardDevPara, int minContigLenPara)
+short initGlobalParas(int operationModePara, char *outputPathName, char *prefix, char **readFilesPara, int readFileNumPara, int singleBaseQualThresPara, int pairedModePara, int kmerLen, int readLenCut, char *graphFilePara, double meanSizeInsertPara, double standardDevPara, int minContigLenPara)
 {
 	int i, prefixLen;
 	char kmerSizeStr[20], readLenStr[20];
@@ -194,7 +194,10 @@ short initGlobalParas(int operationModePara, char *outputPathName, char *prefix,
 	qualityBaseNumEnd3 = ceil(readLen * QUAL_BASE_NUM_3End_FACTOR);
 	qualityBaseNumEnd5 = readLen - qualityBaseNumEnd3;
 	errorRegLenEnd3 = ceil(readLen * ERROR_REGION_LEN_3End_FACTOR);
-
+	if(singleBaseQualThresPara>0)
+		singleBaseQualThres = singleBaseQualThresPara;
+	else
+		singleBaseQualThres = SINGLE_QUAL_THRESHOLD;
 
 	prefixLen = strlen(prefix);
 
@@ -390,6 +393,7 @@ short initGlobalParas(int operationModePara, char *outputPathName, char *prefix,
 		printf("paired mode        : %d\n", pairedMode);
 		for(i=0; i<readFileNumPara; i++)
 		printf("read files[%d]      : %s\n", i, readFilesInput[i]);
+		printf("single qual thres  : %d\n", singleBaseQualThres);
 		if(meanSizeInsert>0)
 		{
 			printf("insert size:       : %.2f\n", meanSizeInsert);
@@ -407,6 +411,7 @@ short initGlobalParas(int operationModePara, char *outputPathName, char *prefix,
 		printf("paired mode        : %d\n", pairedMode);
 		for(i=0; i<readFileNumPara; i++)
 		printf("read files[%d]      : %s\n", i, readFilesInput[i]);
+		printf("single qual thres  : %d\n", singleBaseQualThres);
 		printf("output directory   : %s\n", outputPathStr);
 		printf("graph file         : %s\n", graphFile);
 	}else if(operationMode==2)

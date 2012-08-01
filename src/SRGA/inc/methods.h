@@ -9,8 +9,8 @@ short showUsageInfo();
 //================= srga.c 函数声明 结束 ================/
 
 //================= srga.c 函数声明 开始 ================/
-short startSRGA(int operationModePara, int kmerSizePara, int readLenCutOffPara, int pairedModePara, char **readFilesPara, int readFileNumPara, char *graphFilePara, double meanSizeInsertPara, double standardDevPara, char *outputPathPara, char *outputPrefixPara, int minContigLenPara);
-short initGlobalParas(int operationModepara, char *outputPathName, char *prefix, char **readFilesPara, int readFileNumPara, int pairedModePara, int kmerLen, int readLenCut, char *graphFilePara, double meanSizeInsertPara, double standardDevPara, int minContigLenPara);
+short startSRGA(int operationModePara, int kmerSizePara, int readLenCutOffPara, int pairedModePara, char **readFilesPara, int readFileNumPara, int singleBaseQualThresPara, char *graphFilePara, double meanSizeInsertPara, double standardDevPara, char *outputPathPara, char *outputPrefixPara, int minContigLenPara);
+short initGlobalParas(int operationModepara, char *outputPathName, char *prefix, char **readFilesPara, int readFileNumPara, int singleBaseQualThresPara, int pairedModePara, int kmerLen, int readLenCut, char *graphFilePara, double meanSizeInsertPara, double standardDevPara, int minContigLenPara);
 short setGlobalPath(const char *outPathStr);
 void freeGlobalParas();
 short getReadsFileFormat(int *readsFileFormatType, char **readFilesInput, int readFileNum);
