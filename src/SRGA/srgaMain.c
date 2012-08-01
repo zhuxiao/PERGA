@@ -503,7 +503,7 @@ short showUsageInfo()
 	printf("    -h\n");
 	printf("    -help              Show help information.\n");
 
-	printf("\nREPORT BUGS to ydwang@hit.edu.cn, zhuxiao@gmail.com\n\n");
+	printf("\nREPORT BUGS to ydwang@hit.edu.cn, zhuxiao.hit@gmail.com\n\n");
 
 	return SUCCESSFUL;
 }
