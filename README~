@@ -6,7 +6,7 @@ Release date: Jul 29, 2012
 
 SRGA is a short read guided assembler that combined de Bruijn graph strategy and
 overlap strategy together to perform the assembly by using read overlaps represented
-by their overlapping k-mers.
+by overlapping k-mers.
 
 
 -------------
