@@ -246,13 +246,16 @@ short outputReadsInDecisionTable(assemblingreadtype *decisionTable, int readsNum
 	return SUCCESSFUL;
 }
 
-short outputReadsInDecisionTableToFile(assemblingreadtype *decisionTable, int readsNum)
+short outputReadsInDecisionTableToFile(assemblingreadtype *decisionTable, int readsNum, int contigID, int contigIndex)
 {
 	FILE *fpReads;
 	assemblingreadtype *this_assemblingRead = decisionTable;
-	int i, lockedNum, appearNum;
+	int i, lockedNum, appearNum, failedNum;
+	char fileName[256];
 
-	fpReads = fopen("../readsInDT.txt", "w");
+	sprintf(fileName, "tmp/readsInDT_%d_%d.txt", contigID, contigIndex);
+
+	fpReads = fopen(fileName, "w");
 	if(fpReads==NULL)
 	{
 		printf("line=%d, In %s(), cannot open file [ %s ], error!\n", __LINE__, __func__, "../readsInDT.txt");
@@ -263,10 +266,10 @@ short outputReadsInDecisionTableToFile(assemblingreadtype *decisionTable, int re
 	appearNum = 0;
 	for(i=0; i<readsNum; i++)
 	{
-		fprintf(fpReads, "rid=%lu, firstpos=%d, orientation=%c, status=%d, kmerappeartimes=%d, kmerunappearblocks=%d, kmerunappeartimes=%d, lastappearpos=%d, lastpos=%d, locked=%d, matedFlag=%d\n",
+		fprintf(fpReads, "rid=%lu, firstpos=%d, orientation=%c, status=%d, kmerappeartimes=%d, kmerunappearblocks=%d, kmerunappeartimes=%d, lastappearpos=%d, lastpos=%d, locked=%d, matedFlag=%d, status=%d\n",
 				(uint64_t)this_assemblingRead->rid, this_assemblingRead->firstpos, this_assemblingRead->orientation, this_assemblingRead->status,
 				this_assemblingRead->kmerappeartimes, this_assemblingRead->kmerunappearblocks, this_assemblingRead->kmerunappeartimes,
-				this_assemblingRead->lastappearpos,	this_assemblingRead->lastpos, this_assemblingRead->locked, this_assemblingRead->matedFlag);
+				this_assemblingRead->lastappearpos,	this_assemblingRead->lastpos, this_assemblingRead->locked, this_assemblingRead->matedFlag, this_assemblingRead->status);
 
 		if(this_assemblingRead->locked==1)
 			lockedNum++;
@@ -277,8 +280,53 @@ short outputReadsInDecisionTableToFile(assemblingreadtype *decisionTable, int re
 		this_assemblingRead++;
 	}
 	fprintf(fpReads, "readsNum=%d, appearNum=%d, locked=%d\n", readsNum, appearNum, lockedNum);
+
+	failedNum = 0;
+	fprintf(fpReads, "\n\nfailed reads:\n");
+	for(i=0; i<readsNum; i++)
+	{
+		if(this_assemblingRead->status==FAILED_STATUS)
+		{
+			fprintf(fpReads, "rid=%lu, firstpos=%d, orientation=%c, status=%d, kmerappeartimes=%d, kmerunappearblocks=%d, kmerunappeartimes=%d, lastappearpos=%d, lastpos=%d, locked=%d, matedFlag=%d, status=%d\n",
+					(uint64_t)this_assemblingRead->rid, this_assemblingRead->firstpos, this_assemblingRead->orientation, this_assemblingRead->status,
+					this_assemblingRead->kmerappeartimes, this_assemblingRead->kmerunappearblocks, this_assemblingRead->kmerunappeartimes,
+					this_assemblingRead->lastappearpos,	this_assemblingRead->lastpos, this_assemblingRead->locked, this_assemblingRead->matedFlag, this_assemblingRead->status);
+
+			failedNum ++;
+		}
+
+		this_assemblingRead ++;
+	}
+	fprintf(fpReads, "failedNum=%d\n", failedNum);
+
 	fclose(fpReads);
 	fpReads = NULL;
+
+	return SUCCESSFUL;
+}
+
+short outputFailedReadsInDecisionTable(assemblingreadtype *decisionTable, int itemNumDecisionTable, int contigID, int contigIndex)
+{
+	assemblingreadtype *this_assemblingRead = decisionTable;
+	int i, failedNum;
+
+	failedNum = 0;
+	for(i=0; i<itemNumDecisionTable; i++)
+	{
+		if(this_assemblingRead->status==FAILED_STATUS)
+		{
+			printf("\trid=%lu, firstpos=%d, orientation=%c, kmerappeartimes=%d, kmerunappearblocks=%d, kmerunappeartimes=%d, lastappearpos=%d, lastpos=%d, locked=%d, matedFlag=%d, status=%d\n",
+					(uint64_t)this_assemblingRead->rid, this_assemblingRead->firstpos, this_assemblingRead->orientation,
+					this_assemblingRead->kmerappeartimes, this_assemblingRead->kmerunappearblocks, this_assemblingRead->kmerunappeartimes,
+					this_assemblingRead->lastappearpos,	this_assemblingRead->lastpos, this_assemblingRead->locked, this_assemblingRead->matedFlag, this_assemblingRead->status);
+
+			failedNum ++;
+		}
+
+		this_assemblingRead ++;
+	}
+	if(failedNum>0)
+		printf("contigID=%d, contigIndex=%d, failedNum=%d\n", contigID, contigIndex, failedNum);
 
 	return SUCCESSFUL;
 }

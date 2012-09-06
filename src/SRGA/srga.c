@@ -80,8 +80,8 @@ short initGlobalParas(int operationModePara, char *outputPathName, char *prefix,
 	char kmerSizeStr[20], readLenStr[20];
 	struct stat st;
 
-	printf("SRGA version : %s\n", VERSION_STR);
-	printf("Release date : %s\n", RELEASE_DATE_STR);
+	//printf("SRGA version : %s\n", VERSION_STR);
+	//printf("Release date : %s\n", RELEASE_DATE_STR);
 
 	//printf("\n============= Begin setting global parameters, please wait ... =============\n");
 
@@ -271,9 +271,9 @@ short initGlobalParas(int operationModePara, char *outputPathName, char *prefix,
 //	printf("graphFile=%s\n", graphFile);
 //	printf("sampleContigsFile=%s\n", sampleContigsFile);
 //
-//	printf("qualityBaseNumEnd3=%d\n", qualityBaseNumEnd3);
-//	printf("qualityBaseNumEnd5=%d\n", qualityBaseNumEnd5);
-//	printf("errorRegLenEnd3=%d\n", errorRegLenEnd3);
+	printf("qualityBaseNumEnd3=%d\n", qualityBaseNumEnd3);
+	printf("qualityBaseNumEnd5=%d\n", qualityBaseNumEnd5);
+	printf("errorRegLenEnd3=%d\n", errorRegLenEnd3);
 //	printf("AVERAGE_QUAL_THRESHOLD_3End=%.4f\n", AVERAGE_QUAL_THRESHOLD_3End);
 //	printf("AVERAGE_QUAL_THRESHOLD_5End=%.4f\n", AVERAGE_QUAL_THRESHOLD_5End);
 //	printf("SINGLE_QUAL_THRESHOLD=%d\n", SINGLE_QUAL_THRESHOLD);

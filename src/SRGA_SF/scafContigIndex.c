@@ -1024,7 +1024,7 @@ short convertToContigIndex()
 			pUniqueSeq = uniqueSeqArr + uniqueSeqKmerArr[i].itemRow * entriesPerRead;
 			if((pUniqueSeq[0]>>rightShift_bitsNum)!=i)
 			{
-				printf("line=%d=%d, In %s(), error!\n", __LINE__, __func__);
+				printf("line=%d, In %s(), error!\n", __LINE__, __func__);
 				return FAILED;
 			}
 		}

@@ -19,6 +19,7 @@ short buildEstContigs(char *contigFile)
 {
 	int i, turnContigIndex;
 	int64_t localContigID;
+	double averOccNumNaviOccQueue;
 
 	contigNumEstContigArr = 0;
 	basesNum = 0; //拼接的所有contigs的碱基的总和
@@ -74,11 +75,17 @@ short buildEstContigs(char *contigFile)
 		//将kmer碱基添加进碱基数组
 		strcpy(lastseq36, getKmerBaseByInt(kmerSeqIntAssembly));
 
+		if(setEmptyNaviOccQueue(naviOccQueue, &itemNumNaviOccQueue, &frontRowNaviOccQueue, &rearRowNaviOccQueue)==FAILED)
+		{
+			printf("line=%d, In %s(), cannot initialize the empty navigation occurrence queue, error!\n", __LINE__, __func__);
+			return FAILED;
+		}
+
 		while(kmers[0]||kmers[1])
 		{
 			// ############################ Debug information ##############################
 			//if(contigsNum+1==162 && contigIndex>=3597 && assemblyRound!=FIRST_ROUND_ASSEMBLY)
-			//if(localContigID==1 && contigIndex>=2030 && assemblyRound!=FIRST_ROUND_ASSEMBLY)
+			//if(localContigID==3 && contigIndex>=73040 && assemblyRound!=FIRST_ROUND_ASSEMBLY)
 			//{
 			//	printf("localContigID=%ld, contigID=%d, contigIndex=%d\n", localContigID, contigsNum+1, contigIndex);
 			//}
@@ -103,6 +110,7 @@ short buildEstContigs(char *contigFile)
 					}
 				}else
 				{
+					navigationFlag = NAVI_SE_FLAG;
 					if(getNextKmerBySE(contigIndex)==FAILED)
 					{
 						printf("line=%d, In %s(), localContigID=%ld cannot get next kmer, error!\n", __LINE__, __func__, localContigID);
@@ -112,6 +120,7 @@ short buildEstContigs(char *contigFile)
 			}else
 			{
 				//取正反向kmer
+				navigationFlag = NAVI_SE_FLAG;
 				if(getNextKmerBySE(contigIndex)==FAILED)
 				{
 					printf("line=%d, In %s(), localContigID=%ld, cannot get next kmer, error!\n", __LINE__, __func__, localContigID);
@@ -141,6 +150,10 @@ short buildEstContigs(char *contigFile)
 					//printf("line=%d, In %s(), localContigID=%ld, contigID=%d, assemblyRound=%d, contigIndex=%d, the successContig==NULL!\n", __LINE__, __func__, localContigID, contigsNum+1, assemblyRound, contigIndex);
 					break;
 				}
+
+//				printf("localContigID=%ld, assemblyRound=%d, contigIndex=%d, itemNumDecisionTable=%d\n", localContigID, assemblyRound, contigIndex, itemNumDecisionTable);
+//				printf("\toccsNumSE: (%d, %d, %d, %d)\n", occsNumSE[0], occsNumSE[1], occsNumSE[2], occsNumSE[3]);
+//				printf("\tdistance=%d, readsNumRatio=%.2f\n", contigIndex-successContig->index, readsNumRatio);
 
 				//开始下一轮的拼接的预处理
 				if(assemblyRound==FIRST_ROUND_ASSEMBLY)
@@ -176,6 +189,22 @@ short buildEstContigs(char *contigFile)
 				}
 			}
 
+			if(navigationFlag==NAVI_PE_FLAG)
+			{
+				if(updateNaviOccQueue(naviOccQueue, &itemNumNaviOccQueue, &frontRowNaviOccQueue, &rearRowNaviOccQueue, maxOccPE)==FAILED)
+				{
+					printf("line=%d, In %s(), localContigID=%ld, cannot update the navigation occurrence queue, error!\n", __LINE__, __func__, localContigID);
+					return FAILED;
+				}
+			}else
+			{
+				if(updateNaviOccQueue(naviOccQueue, &itemNumNaviOccQueue, &frontRowNaviOccQueue, &rearRowNaviOccQueue, maxOccSE)==FAILED)
+				{
+					printf("line=%d, In %s(), localContigID=%ld, cannot update the navigation occurrence queue, error!\n", __LINE__, __func__, localContigID);
+					return FAILED;
+				}
+			}
+
 			contigIndex ++;
 
 
@@ -206,6 +235,10 @@ short buildEstContigs(char *contigFile)
 				printf("line=%d, In %s(), localContigID=%ld, cannot update locked reads, error!\n", __LINE__, __func__, localContigID);
 				return FAILED;
 			}
+
+			//if(localContigID==2)
+			//	outputReadsInDecisionTableToFile(decisionTable, itemNumDecisionTable, (int)localContigID, contigIndex);
+			//outputFailedReadsInDecisionTable(decisionTable, itemNumDecisionTable, (int)localContigID, contigIndex);
 
 			// update the finished reads in decision table, and record the successful reads into successful reads array
 			if(updateFinishedReadsInDecisionTable()==FAILED)
@@ -285,10 +318,15 @@ short buildEstContigs(char *contigFile)
 			}else if(tmp_successContig==NULL)
 			{
 				break;
-			}else if(contigIndex-successContig->index > readLen-MIN_OVERLAP_LEN)
+			//}else if((contigIndex-successContig->index > readLen-MIN_OVERLAP_LEN) || (contigIndex-successContig->index > 8 && ((readsNumRatio>2 || readsNumRatio<0.3) || secondOccSE>=minKmerOccSE)))
+			}else if(contigIndex-successContig->index > readLen-MIN_OVERLAP_LEN )
 			{ //已经有成功的reads, 则根据拼接的情况, 确定是否需要继续拼接
 
 				number_of_overlap_less_than_threshold ++;
+
+//				printf("===localContigID=%ld, assemblyRound=%d, contigIndex=%d, itemNumDecisionTable=%d\n", localContigID, assemblyRound, contigIndex, itemNumDecisionTable);
+//				printf("\toccsNumSE: (%d, %d, %d, %d)\n", occsNumSE[0], occsNumSE[1], occsNumSE[2], occsNumSE[3]);
+//				printf("\tdistance=%d, readsNumRatio=%.2f\n", contigIndex-successContig->index, readsNumRatio);
 
 				//第二轮拼接时, contig长度大于100时才进行衔接操作
 				if(assemblyRound==SECOND_ROUND_ASSEMBLY && contigIndex<CONTIG_LEN_THRESHOLD)
@@ -326,6 +364,62 @@ short buildEstContigs(char *contigFile)
 					break;
 				}
 			}
+/*
+			else if(contigIndex-successContig->index >= 7)
+			{ //已经有成功的reads, 则根据拼接的情况, 确定是否需要继续拼接
+
+				if(calcAverOccNaviOccQueue(&averOccNumNaviOccQueue, naviOccQueue, itemNumNaviOccQueue)==FAILED)
+				{
+					printf("line=%d, In %s(), localContigID=%ld, contigID=%d, cannot compute the average occurrence in navigation occurrence queue, error!\n", __LINE__, __func__, localContigID, contigsNum+1);
+					return FAILED;
+				}
+
+				if((averOccNumNaviOccQueue<2.5*minKmerOccSE) || (readsNumRatio>2 || readsNumRatio<0.3) || ((navigationFlag==NAVI_PE_FLAG && secondOccPE>=minKmerOccPE && secondOccPE/maxOccPE>=0.2) || (navigationFlag==NAVI_SE_FLAG && secondOccSE>=minKmerOccSE && secondOccSE/maxOccSE>=0.15)))
+				{
+					number_of_overlap_less_than_threshold ++;
+
+					printf("===localContigID=%ld, assemblyRound=%d, contigIndex=%d, itemNumDecisionTable=%d\n", localContigID, assemblyRound, contigIndex, itemNumDecisionTable);
+					printf("\toccsNumSE: (%d, %d, %d, %d)\n", occsNumSE[0], occsNumSE[1], occsNumSE[2], occsNumSE[3]);
+					printf("\tdistance=%d, readsNumRatio=%.2f, averOccNumNaviOccQueue=%.2f\n", contigIndex-successContig->index, readsNumRatio, averOccNumNaviOccQueue);
+
+					//第二轮拼接时, contig长度大于100时才进行衔接操作
+					if(assemblyRound==SECOND_ROUND_ASSEMBLY && contigIndex<CONTIG_LEN_THRESHOLD)
+					{
+						break;
+					}
+
+					//第二轮拼接的预处理
+					if(assemblyRound==FIRST_ROUND_ASSEMBLY)
+					{ //现在处于第1论拼接, 需要进行第二轮拼接
+
+						assemblyRound ++; //第二轮拼接标记
+						turnContigIndex = contigIndex;
+
+						int returnCode = initSecondAssembly();
+						if(returnCode==FAILED)
+						{
+							break;
+						}else if(returnCode==ERROR)
+						{
+							return FAILED;
+						}
+
+					}else
+					{ //现在已经处于第2论拼接, 则该contig链表的拼接结束
+
+						// ############################ Debug information ##############################
+						//if(successContig==NULL && contigIndex>=CONTIG_LEN_THRESHOLD)
+						//{ //出错
+						//	printf("line=%d, In %s(), localContigID=%ld, contigID=%d, assemblyRound=%d, contigIndex=%d, successContig==NULL, Error!\n", __LINE__, __func__, localContigID, contigsNum+1, assemblyRound, contigIndex);
+						//	return FAILED;
+						//}
+						// ############################ Debug information ##############################
+
+						break;
+					}
+				}
+			}
+*/
 		}//end while(kmer)
 
 		if(successContig)
@@ -488,7 +582,8 @@ short getNextKmerByMix(int contigNodesNum, int assemblyRound)
 {
 	unsigned int tmp_kmerseqInt, tmp_kmerseqPE, tmp_kmerseqSE;
 	kmertype *tmp_kmers[2]/*, *tmp_kmersPE[2], *tmp_kmersSE[2]*/;
-	int i, maxOccPE, maxOccSE, maxOccIndexPE, maxOccIndexSE;
+	int i;
+	double sumSecondOccSE;
 
 	if(itemNumDecisionTable>MAX_DECISION_TABLE_SIZE_HTRES)
 	{
@@ -496,6 +591,7 @@ short getNextKmerByMix(int contigNodesNum, int assemblyRound)
 		return SUCCESSFUL;
 	}
 
+	navigationFlag = NAVI_PE_FLAG;
 	tmp_kmers[0] = kmers[0];
 	tmp_kmers[1] = kmers[1];
 	if(memcpy(tmpKmerSeqIntAssembly, kmerSeqIntAssembly, entriesPerKmer*sizeof(uint64_t))==NULL)
@@ -510,135 +606,177 @@ short getNextKmerByMix(int contigNodesNum, int assemblyRound)
 		printf("line=%d, In %s(), cannot get next kmer, error!\n", __LINE__, __func__);
 		return FAILED;
 	}
-//	tmp_kmersPE[0] = kmers[0];
-//	tmp_kmersPE[1] = kmers[1];
-//	tmp_kmerseqPE = thiskmerseq;
+
+	if(kmers[0] || kmers[1])
+	{
+		if((readsNumRatio<0.2 || readsNumRatio>3) && (successContig!=NULL && contigIndex-successContig->index >= 15))
+			kmers[0] = kmers[1] = NULL;
+		else if((maxOccPE>0 && maxOccPE<=minKmerOccPE) && (readsNumRatio<0.3 || readsNumRatio>3))
+			kmers[0] = kmers[1] = NULL;
+		else if(readsNumRatio>2.5 && (successContig!=NULL && contigIndex-successContig->index >= 20))
+			kmers[0] = kmers[1] = NULL;
+		else if(readsNumRatio>6 && (maxOccPE>maxOccNumFaiedPE && secondOccPE/maxOccPE>0.2))
+			kmers[0] = kmers[1] = NULL;
+		else if(readsNumRatio>5)
+			kmers[0] = kmers[1] = NULL;
+		else if(maxOccPE==1 && readsNumRatio < 0.7)
+			kmers[0] = kmers[1] = NULL;
+//		else if(readsNumRatio < 0.6 && (successContig!=NULL &&  contigIndex-successContig->index >= 13))
+//		{
+//			kmers[0] = kmers[1] = NULL;
+//		}
+	}
+
 
 	if(kmers[0]==NULL && kmers[1]==NULL)
 	{
-		// get the score and occsNum of SE
-		kmers[0] = tmp_kmers[0];
-		kmers[1] = tmp_kmers[1];
-		if(memcpy(kmerSeqIntAssembly, tmpKmerSeqIntAssembly, entriesPerKmer*sizeof(uint64_t))==NULL)
-		{
-			printf("line=%d, In %s(), cannot copy memory, error!\n", __LINE__, __func__);
-			return FAILED;
-		}
-
-		if(getNextKmerBySE(contigNodesNum)==FAILED)
-		{
-			printf("line=%d, In %s(), cannot get next kmer, error!\n", __LINE__, __func__);
-			return FAILED;
-		}
-//		tmp_kmersSE[0] = kmers[0];
-//		tmp_kmersSE[1] = kmers[1];
-//		tmp_kmerseqSE = thiskmerseq;
-
-		maxOccIndexSE = -1;
-		maxOccSE = 0;
-		for(i=0; i<4; i++)
-		{
-			if(occsNumSE[i]>maxOccSE)
+//		if(maxOccPE<2)
+//		{
+			// get the score and occsNum of SE
+			navigationFlag = NAVI_SE_FLAG;
+			kmers[0] = tmp_kmers[0];
+			kmers[1] = tmp_kmers[1];
+			if(memcpy(kmerSeqIntAssembly, tmpKmerSeqIntAssembly, entriesPerKmer*sizeof(uint64_t))==NULL)
 			{
-				maxOccSE = occsNumSE[i];
-				maxOccIndexSE = i;
+				printf("line=%d, In %s(), cannot copy memory, error!\n", __LINE__, __func__);
+				return FAILED;
 			}
-		}
 
-		maxOccIndexPE = -1;
-		maxOccPE = 0;
-		for(i=0; i<4; i++)
-		{
-			if(occsNumPE[i]>maxOccPE)
+			if(getNextKmerBySE(contigNodesNum)==FAILED)
 			{
-				maxOccPE = occsNumPE[i];
-				maxOccIndexPE = i;
+				printf("line=%d, In %s(), cannot get next kmer, error!\n", __LINE__, __func__);
+				return FAILED;
 			}
-		}
 
-		// check the scores and occsNums of PE and SE
-		//if(maxOccIndexPE==-1 && maxOccSE>OCCS_NUM_SE_FAILED_PE_FACTOR*averKmerOcc)  //==================================
-		//if(maxOccIndexPE==-1 && maxOccSE>maxFirstOcc)
-		//if(maxOccIndexPE==-1 && maxOccSE>maxOccNumFaiedPE)
-		if((maxOccIndexPE==-1 && maxOccSE>maxOccNumFaiedPE) && navigationID==0)
-		//if((maxOccIndexPE==-1 && maxOccSE>maxOccNumFaiedPE) && (navigationNumSE>maxNavigationNumSE))
-		{
-			kmers[0] = kmers[1] = NULL;
-		}
+			if(kmers[0] || kmers[1])
+			{
+				sumSecondOccSE = 0;
+				for(i=0; i<4; i++) if(i!=maxOccIndexSE) sumSecondOccSE += occsNumSE[i];
 
-		navigationID = 0;
-		navigationNumSE ++;
+				// check the scores and occsNums of PE and SE
+				//if(maxOccIndexPE==-1 && maxOccSE>OCCS_NUM_SE_FAILED_PE_FACTOR*averKmerOcc)  //==================================
+				//if(maxOccIndexPE==-1 && maxOccSE>maxFirstOcc)
+				//if(maxOccIndexPE==-1 && maxOccSE>maxOccNumFaiedPE)
+				//if((maxOccIndexPE==-1 && (secondOccSE>=minKmerOccSE && secondOccSE/maxOccSE>SECOND_FIRST_OCC_FAILED_RATIO && maxOccSE>maxOccNumFaiedPE)) && navigationID==0)
+				//if((maxOccIndexPE==-1 && ((secondOccSE>=minKmerOccSE && maxOccSE>maxOccNumFaiedPE) || maxOccSE<minKmerOccSE)) && navigationID==0)
+				//if((maxOccIndexPE==-1 && ((secondOccSE>=minKmerOccSE && (maxOccSE>maxOccNumFaiedPE || secondOccSE/maxOccSE>SECOND_FIRST_OCC_FAILED_RATIO)) || maxOccSE<minKmerOccSE)) && navigationID==0)
+				//if((maxOccIndexPE==-1 && ((secondOccSE>=minKmerOccSE && (maxOccSE>maxOccNumFaiedPE || secondOccSE/maxOccSE>0.5)) || maxOccSE<minKmerOccSE)) && navigationID==0)
+				//if(((secondOccSE>=minKmerOccSE && (maxOccSE>maxOccNumFaiedPE || secondOccSE/maxOccSE>0.5)) || maxOccSE<minKmerOccSE) && navigationID==0)
+				if((secondOccSE>=minKmerOccSE && (maxOccSE>maxOccNumFaiedPE || secondOccSE/maxOccSE>0.5)) || maxOccSE<minKmerOccSE)
+				{
+					if(maxOccIndexPE==-1)
+					{
+						if(secondOccSE/maxOccSE>0.5)
+							kmers[0] = kmers[1] = NULL;
+						else if(maxOccSE==1 && (successContig!=NULL &&  contigIndex-successContig->index >= 3))
+						{
+							if(maxOccIndexPE!=maxOccIndexSE)
+								kmers[0] = kmers[1] = NULL;
+						}
+					}else
+					{
+						if(maxOccPE>=minKmerOccPE && maxOccSE>=minKmerOccSE && maxOccIndexPE==maxOccIndexSE && secondOccSE/maxOccSE<=0.5)
+						{
+							if(readsNumRatio>6 && secondOccSE/maxOccSE>0.15)
+								kmers[0] = kmers[1] = NULL;
+						}else
+						{
+							if(secondOccSE>=minKmerOccSE && secondOccSE/maxOccSE>0.1)
+								kmers[0] = kmers[1] = NULL;
+						}
+					}
+
+				//}else if(secondOccPE>minKmerOccPE && secondOccSE>=2*minKmerOccSE && secondOccSE/maxOccSE>0.5)
+				}
+//				else if(secondOccSE>=minKmerOccSE && secondOccSE/maxOccSE>0.15)
+//				{
+//					kmers[0] = kmers[1] = NULL;
+//				}
+				//else if(maxOccSE>maxOccNumFaiedPE && (readsNumRatio<0.2 || readsNumRatio>2.5 || (successContig!=NULL && contigIndex-successContig->index >= 15)))
+				//else if(maxOccSE>maxOccNumFaiedPE && (readsNumRatio<0.2 || readsNumRatio>2.5 || (successContig!=NULL && contigIndex-successContig->index >= 20)))
+				else if(maxOccSE>maxOccNumFaiedPE && (readsNumRatio<0.2 || readsNumRatio>3.5 || (successContig!=NULL && contigIndex-successContig->index >= 15)))
+				{
+					if(maxOccIndexPE!=maxOccIndexSE)
+						kmers[0] = kmers[1] = NULL;
+				}else if(readsNumRatio>2 && (successContig!=NULL && contigIndex-successContig->index >= 20))
+				//}else if(readsNumRatio>2 && (successContig!=NULL && contigIndex-successContig->index >= 30))
+				{
+					if(maxOccIndexPE!=maxOccIndexSE)
+						kmers[0] = kmers[1] = NULL;
+				}
+				else if(secondOccSE>=minKmerOccSE && secondOccSE/maxOccSE>0.2 && (successContig!=NULL &&  contigIndex-successContig->index >= 7))
+				{
+					if(maxOccIndexPE!=maxOccIndexSE)
+						kmers[0] = kmers[1] = NULL;
+				}
+				//===============
+				else if(maxOccSE>maxOccNumFaiedPE && readsNumRatio<0.25 && (successContig!=NULL &&  contigIndex-successContig->index >= 7))
+				{
+					if(maxOccIndexPE!=maxOccIndexSE)
+						kmers[0] = kmers[1] = NULL;
+				}
+
+				else if(secondOccSE>=2*minKmerOccSE && secondOccSE/maxOccSE>0.35 && readsNumRatio < 0.8)
+				//else if(secondOccSE>=2*minKmerOccSE && secondOccSE/maxOccSE>0.35)
+				//else if(secondOccSE>=2*minKmerOccSE && secondOccSE/maxOccSE>0.1 && readsNumRatio < 1)
+				{
+					if(maxOccIndexPE!=maxOccIndexSE)
+						kmers[0] = kmers[1] = NULL;
+				}
+				else if(secondOccSE>=3*minKmerOccSE && sumSecondOccSE/maxOccSE>0.2 && (readsNumRatio >1 || readsNumRatio < 0.7))
+				{
+					if(maxOccIndexPE!=maxOccIndexSE)
+						kmers[0] = kmers[1] = NULL;
+				}else if(secondOccSE<minKmerOccSE && sumSecondOccSE/maxOccSE>0.4 && maxOccSE-sumSecondOccSE<2)
+				{
+					if(maxOccIndexPE!=maxOccIndexSE)
+						kmers[0] = kmers[1] = NULL;
+				}
+
+				else if(secondOccSE>minKmerOccSE && sumSecondOccSE/maxOccSE>0.2 && readsNumRatio >1.6)
+				{
+					if(maxOccIndexPE!=maxOccIndexSE)
+						kmers[0] = kmers[1] = NULL;
+				}
+				else if(maxOccSE<10*minKmerOccSE && secondOccSE>minKmerOccSE && sumSecondOccSE/maxOccSE>0.25)
+				{
+					if(maxOccIndexPE!=maxOccIndexSE)
+						kmers[0] = kmers[1] = NULL;
+				}
+
+//				else if(maxOccIndexPE==-1 && maxOccSE > 19*minKmerOccSE && readsNumRatio < 0.615 && (successContig!=NULL &&  contigIndex-successContig->index >= 5))
+//				{
+//					//if(maxOccIndexPE!=maxOccIndexSE)
+//						kmers[0] = kmers[1] = NULL;
+//				}
+//
+//				else if(maxOccIndexPE==-1 && maxOccSE > 12*minKmerOccSE && readsNumRatio < 0.87 && (successContig!=NULL &&  contigIndex-successContig->index >= 10))
+//				{
+//					kmers[0] = kmers[1] = NULL;
+//				}
+
+//				else if(maxOccSE > 8*minKmerOccSE && readsNumRatio < 0.9 && (successContig!=NULL &&  contigIndex-successContig->index >= 13))
+//				{
+//					if(maxOccIndexPE!=maxOccIndexSE)
+//						kmers[0] = kmers[1] = NULL;
+//				}
+
+//				else if(readsNumRatio < 0.6 && (successContig!=NULL &&  contigIndex-successContig->index >= 13))
+//				{
+//					kmers[0] = kmers[1] = NULL;
+//				}
+//				else if(readsNumRatio>6 && (maxOccSE>maxOccNumFaiedPE && secondOccSE/maxOccSE>0.2))
+//					kmers[0] = kmers[1] = NULL;
+
+				navigationID = 0;
+				navigationNumSE ++;
+			}
+//		}
 	}else
 	{
 		navigationID = 1;
 		navigationNumSE = 0;
 	}
-
-/*
-	maxOccIndexSE = -1;
-	maxOccSE = 0;
-	for(i=0; i<4; i++)
-	{
-		if(occsNumSE[i]>maxOccSE)
-		{
-			maxOccSE = occsNumSE[i];
-			maxOccIndexSE = i;
-		}
-	}
-
-	maxOccIndexPE = -1;
-	maxOccPE = 0;
-	for(i=0; i<4; i++)
-	{
-		if(occsNumPE[i]>maxOccPE)
-		{
-			maxOccPE = occsNumPE[i];
-			maxOccIndexPE = i;
-		}
-	}
-
-	// check the scores and occsNums of PE and SE
-	if(maxOccIndexPE==-1 && maxOccIndexSE==-1)
-	{
-		kmers[0] = kmers[1] = NULL;
-		thiskmerseq = 0;
-	}else if(maxOccIndexPE!=-1 && maxOccIndexSE==-1)
-	{
-		kmers[0] = tmp_kmersPE[0];
-		kmers[1] = tmp_kmersPE[1];
-		thiskmerseq = tmp_kmerseqPE;
-	}else if(maxOccIndexPE==-1 && maxOccIndexSE!=-1)
-	{
-		kmers[0] = tmp_kmersSE[0];
-		kmers[1] = tmp_kmersSE[1];
-		thiskmerseq = tmp_kmerseqSE;
-	}else // if(maxOccIndexPE!=-1 && maxOccIndexSE!=-1)
-	{
-		if(maxOccIndexPE!=maxOccIndexSE)
-		{
-			if(maxOccPE>=MIN_CONNECT_KMER_NUM)
-			{
-				kmers[0] = tmp_kmersPE[0];
-				kmers[1] = tmp_kmersPE[1];
-				thiskmerseq = tmp_kmerseqPE;
-			}else if(maxOccSE>=MIN_CONNECT_KMER_NUM)
-			{
-				kmers[0] = tmp_kmersSE[0];
-				kmers[1] = tmp_kmersSE[1];
-				thiskmerseq = tmp_kmerseqSE;
-			}else
-			{
-				kmers[0] = kmers[1] = NULL;
-				thiskmerseq = 0;
-			}
-		}else
-		{
-			kmers[0] = tmp_kmersPE[0];
-			kmers[1] = tmp_kmersPE[1];
-			thiskmerseq = tmp_kmerseqPE;
-		}
-	}
-*/
 
 	return SUCCESSFUL;
 }
@@ -655,8 +793,8 @@ short getNextKmerByPE(int contigNodesNum, int assemblyRound)
 	kmertype *tmp_kmers[4][2] = {{0,0},{0,0},{0,0},{0,0}};  //tmp_kmers[i][0]为正向的kmer, tmp_kmers[i][1]为反向的kmer
 	short validKmerNum = 0, base_index = 0; //有效的kmer数目
 	int i = 0, j;
-	double maxOcc = 0, secondOcc = 0;
-	int maxOccIndex = -1, secondOccIndex = -1;
+	//double maxOcc = 0, secondOcc = 0;
+	//int maxOccIndex = -1, secondOccIndex = -1;
 	kmer_len = 0;
 
 	if(itemNumDecisionTable>MAX_DECISION_TABLE_SIZE_HTRES)
@@ -718,6 +856,11 @@ short getNextKmerByPE(int contigNodesNum, int assemblyRound)
 
 			kmers[0] = tmp_kmers[base_index][0];
 			kmers[1] = tmp_kmers[base_index][1];
+
+			maxOccIndexPE = base_index;
+			maxOccPE = occsNumPE[maxOccIndexPE];
+			secondOccIndexPE = -1;
+			secondOccPE = 0;
 		}else
 		{
 			kmers[0] = kmers[1] = NULL;
@@ -735,8 +878,8 @@ short getNextKmerByPE(int contigNodesNum, int assemblyRound)
 
 	//开始计算每个kmer得分
 	validKmerNum = 0;
-	maxOcc = 0, secondOcc = 0;
-	maxOccIndex = -1, secondOccIndex = -1;
+	maxOccPE = 0, secondOccPE = 0;
+	maxOccIndexPE = -1, secondOccIndexPE = -1;
 	//tmp_max = 0, tmp_maxOcc = 0, tmp_maxIndex = -1, tmp_maxOccIndex = -1;
 	for(i=0; i<4; i++)
 	{
@@ -825,19 +968,19 @@ short getNextKmerByPE(int contigNodesNum, int assemblyRound)
 
 	if(validKmerNum>0)
 	{
-		maxOcc = 0, maxOccIndex = -1, secondOcc = 0, secondOccIndex = -1;
+		maxOccPE = 0, maxOccIndexPE = -1, secondOccPE = 0, secondOccIndexPE = -1;
 		for(j=0; j<4; j++)
 		{
-			if(maxOcc<occsNumPE[j])
+			if(maxOccPE<occsNumPE[j])
 			{
-				secondOcc = maxOcc;
-				secondOccIndex = maxOccIndex;
-				maxOcc = occsNumPE[j];
-				maxOccIndex = j;
-			}else if(secondOcc<occsNumPE[j])
+				secondOccPE = maxOccPE;
+				secondOccIndexPE = maxOccIndexPE;
+				maxOccPE = occsNumPE[j];
+				maxOccIndexPE = j;
+			}else if(secondOccPE<occsNumPE[j])
 			{
-				secondOcc = occsNumPE[j];
-				secondOccIndex = j;
+				secondOccPE = occsNumPE[j];
+				secondOccIndexPE = j;
 			}
 		}
 	}
@@ -896,9 +1039,12 @@ short getNextKmerByPE(int contigNodesNum, int assemblyRound)
 	//=====these several lines have bad result, thus they are omitted. =======//
 	//if(validKmerNum>1 && (secondOcc/maxOcc>SECOND_FIRST_OCC_RATIO || (kmer_len==25 && secondOcc>SECOND_OCC_THRESHOLD)))
 	//if(validKmerNum>1 && kmer_len==25 && ((secondOcc/maxOcc>SECOND_FIRST_OCC_RATIO && secondOcc>MIN_CONNECT_KMER_NUM) || (secondOcc>SECOND_OCC_THRESHOLD)))
-	if(validKmerNum>1 && ((secondOcc/maxOcc>SECOND_FIRST_OCC_RATIO && secondOcc>minKmerOccPE) || (secondOcc>maxSecondOcc)))
+	//if(validKmerNum>1 && ((secondOccPE/maxOccPE>SECOND_FIRST_OCC_RATIO/2 && secondOccPE>minKmerOccPE) || (secondOccPE>maxSecondOcc)))
+	//if(maxOccPE<minKmerOccPE || (validKmerNum>1 && ((secondOccPE/maxOccPE>SECOND_FIRST_OCC_RATIO/2 && secondOccPE>minKmerOccPE) || (secondOccPE>maxSecondOcc))))
+	if(maxOccPE<minKmerOccPE || (validKmerNum>1 && (secondOccPE/maxOccPE>SECOND_FIRST_OCC_RATIO/2 || (secondOccPE>maxSecondOcc))))
 	{
-		validKmerNum = 0;
+		if(secondOccPE/maxOccPE>SECOND_FIRST_OCC_FAILED_RATIO)
+			validKmerNum = 0;
 	}
 
 
@@ -920,10 +1066,10 @@ short getNextKmerByPE(int contigNodesNum, int assemblyRound)
 				}
 				kmerSeqIntAssembly[entriesPerKmer-2] = (kmerSeqIntAssembly[entriesPerKmer-2] << 2) | (kmerSeqIntAssembly[entriesPerKmer-1] >> (2*lastEntryBaseNum-2));
 			}
-			kmerSeqIntAssembly[entriesPerKmer-1] = ((kmerSeqIntAssembly[entriesPerKmer-1] << 2) | maxOccIndex) & lastEntryMask;
+			kmerSeqIntAssembly[entriesPerKmer-1] = ((kmerSeqIntAssembly[entriesPerKmer-1] << 2) | maxOccIndexPE) & lastEntryMask;
 
-			kmers[0] = tmp_kmers[maxOccIndex][0];
-			kmers[1] = tmp_kmers[maxOccIndex][1];
+			kmers[0] = tmp_kmers[maxOccIndexPE][0];
+			kmers[1] = tmp_kmers[maxOccIndexPE][1];
 //			}
 
 		return SUCCESSFUL;
@@ -946,10 +1092,10 @@ short getNextKmerByPE(int contigNodesNum, int assemblyRound)
 			}
 			kmerSeqIntAssembly[entriesPerKmer-2] = (kmerSeqIntAssembly[entriesPerKmer-2] << 2) | (kmerSeqIntAssembly[entriesPerKmer-1] >> (2*lastEntryBaseNum-2));
 		}
-		kmerSeqIntAssembly[entriesPerKmer-1] = ((kmerSeqIntAssembly[entriesPerKmer-1] << 2) | maxOccIndex) & lastEntryMask;
+		kmerSeqIntAssembly[entriesPerKmer-1] = ((kmerSeqIntAssembly[entriesPerKmer-1] << 2) | maxOccIndexPE) & lastEntryMask;
 
-		kmers[0] = tmp_kmers[maxOccIndex][0];
-		kmers[1] = tmp_kmers[maxOccIndex][1];
+		kmers[0] = tmp_kmers[maxOccIndexPE][0];
+		kmers[1] = tmp_kmers[maxOccIndexPE][1];
 
 		return SUCCESSFUL;
 	}
@@ -1878,3 +2024,116 @@ int trimContigTailByReadLen(contigtype *contighead, contigtype **contigtail, con
 
 	return SUCCESSFUL;
 }
+
+/**
+ * Set the navigation occurrence queue to empty.
+ *  @return:
+ *  	If succeeds, return SUCCESSFUL; otherwise, return FAILED.
+ */
+short setEmptyNaviOccQueue(double *naviOccQueuePara, int *itemNumNaviOccQueuePara, int *frontRowNaviOccQueuePara, int *rearRowNaviOccQueuePara)
+{
+	int i;
+
+	for(i=0; i<*itemNumNaviOccQueuePara; i++) naviOccQueuePara[i] = 0;
+	*itemNumNaviOccQueuePara = 0;
+	*frontRowNaviOccQueuePara = 0;
+	*rearRowNaviOccQueuePara = 0;
+
+	return SUCCESSFUL;
+}
+
+/**
+ * Update the navigation occurrence queue.
+ *  @return:
+ *  	If succeeds, return SUCCESSFUL; otherwise, return FAILED.
+ */
+short updateNaviOccQueue(double *naviOccQueuePara, int *itemNumNaviOccQueuePara, int *frontRowNaviOccQueuePara, int *rearRowNaviOccQueuePara, double maxOccNum)
+{
+	if(*itemNumNaviOccQueuePara>=maxItemNumNaviOccQueue)
+	{ // full queue, then add the first item
+		(*rearRowNaviOccQueuePara) = ((*rearRowNaviOccQueuePara) + 1) % maxItemNumNaviOccQueue;
+		(*frontRowNaviOccQueuePara) = ((*frontRowNaviOccQueuePara) + 1) % maxItemNumNaviOccQueue;
+		naviOccQueuePara[*rearRowNaviOccQueuePara] = maxOccNum;
+	}else if(*itemNumNaviOccQueuePara==0)
+	{ // empty queue, then add the first item
+		*frontRowNaviOccQueuePara = *rearRowNaviOccQueuePara = 0;
+		naviOccQueuePara[*rearRowNaviOccQueuePara] = maxOccNum;
+		*itemNumNaviOccQueuePara = 1;
+	}else if(*itemNumNaviOccQueuePara<maxItemNumNaviOccQueue)
+	{ // non-full queue, add new item
+		(*rearRowNaviOccQueuePara) ++;
+		naviOccQueuePara[*rearRowNaviOccQueuePara] = maxOccNum;
+		(*itemNumNaviOccQueuePara) ++;
+	}else
+	{ // Exception errors
+		printf("line=%d, In %s(), itemNumNaviOccQueue=%d, error!\n", __LINE__, __func__, *itemNumNaviOccQueuePara);
+		return FAILED;
+	}
+
+	return SUCCESSFUL;
+}
+
+/**
+ * Compute the average number in navigation occurrence queue.
+ *  @return:
+ *  	If succeeds, return SUCCESSFUL; otherwise, return FAILED.
+ */
+short calcAverOccNaviOccQueue(double *averOccNum, double *naviOccQueuePara, int itemNumNaviOccQueuePara)
+{
+	int i;
+
+	*averOccNum = 0;
+	for(i=0; i<itemNumNaviOccQueuePara; i++)
+		*averOccNum += naviOccQueuePara[i];
+
+	if(itemNumNaviOccQueuePara>0)
+		*averOccNum /= itemNumNaviOccQueuePara;
+	else
+		*averOccNum = 0;
+
+	return SUCCESSFUL;
+}
+
+/**
+ * Get the length of low occurrence region in navigation occurrence queue.
+ *  @return:
+ *  	If succeeds, return SUCCESSFUL; otherwise, return FAILED.
+ */
+short getLowOccLenNaviOccQueue(int *lowLen, double *naviOccQueuePara, int itemNumNaviOccQueuePara, int frontRowNaviOccQueuePara)
+{
+	int i, j, maxLen, len;
+
+	*lowLen = 0;
+	for(i=0; i<itemNumNaviOccQueuePara; i++)
+	{
+		if(naviOccQueuePara[i]<=lowOccThresNaviOccQueue)
+		{
+			(*lowLen) ++;
+		}
+	}
+
+/*
+	len = 0;
+	maxLen = 0;
+	j = frontRowNaviOccQueuePara;
+	for(i=0; i<itemNumNaviOccQueuePara; i++)
+	{
+		if(naviOccQueuePara[j]<=lowOccThresNaviOccQueue)
+		{
+			len ++;
+		}else
+		{
+			if(len>maxLen)
+				maxLen = len;
+			len = 0;
+		}
+		j = (j+1) % maxItemNumNaviOccQueue;
+	}
+
+	*lowLen = maxLen;
+*/
+
+	return SUCCESSFUL;
+}
+
+

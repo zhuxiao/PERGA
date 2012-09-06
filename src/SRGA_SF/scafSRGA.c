@@ -71,9 +71,11 @@ short setGlobalParas(const char *outputPathName, const char *outputPrefixName, c
 		return FAILED;
 	}
 
+	strcpy(outputPrefix, outputPrefixName);
+
 	if(strlen(contigFileName)>0)
 	{
-		if(setContigFileNames(outputPathStr, outputPrefixName, contigFileName)==FAILED)
+		if(setContigFileNames(outputPathStr, outputPrefix, contigFileName)==FAILED)
 		{
 			printf("line=%d, In %s(), cannot set contig file, error!\n", __LINE__, __func__);
 			return FAILED;
@@ -139,20 +141,20 @@ short setGlobalParas(const char *outputPathName, const char *outputPrefixName, c
 		stardardDeviationInsert = standardDevPara;
 	}
 
-	prefixLen = strlen(outputPrefixName);
+	prefixLen = strlen(outputPrefix);
 
 	// get the match result file name
 	strcpy(readMatchFiles[0], outputPathStr);
 	if(prefixLen>0)
 	{
-		strcat(readMatchFiles[0], outputPrefixName);
+		strcat(readMatchFiles[0], outputPrefix);
 		strcat(readMatchFiles[0], "_");
 	}
 	strcat(readMatchFiles[0], "reads_match_1.bin");
 	strcpy(readMatchFiles[1], outputPathStr);
 	if(prefixLen>0)
 	{
-		strcat(readMatchFiles[1], outputPrefixName);
+		strcat(readMatchFiles[1], outputPrefix);
 		strcat(readMatchFiles[1], "_");
 	}
 	strcat(readMatchFiles[1], "reads_match_2.bin");
@@ -161,7 +163,7 @@ short setGlobalParas(const char *outputPathName, const char *outputPrefixName, c
 	strcpy(readSeqFile, outputPathStr);
 	if(prefixLen>0)
 	{
-		strcat(readSeqFile, outputPrefixName);
+		strcat(readSeqFile, outputPrefix);
 		strcat(readSeqFile, "_");
 	}
 	strcat(readSeqFile, "readSeq.txt");
@@ -170,7 +172,7 @@ short setGlobalParas(const char *outputPathName, const char *outputPrefixName, c
 	strcpy(monoReadSeqFile, outputPathStr);
 	if(prefixLen>0)
 	{
-		strcat(monoReadSeqFile, outputPrefixName);
+		strcat(monoReadSeqFile, outputPrefix);
 		strcat(monoReadSeqFile, "_");
 	}
 	strcat(monoReadSeqFile, "monoReadSeq.txt");
@@ -179,7 +181,7 @@ short setGlobalParas(const char *outputPathName, const char *outputPrefixName, c
 	strcpy(contigIndexFile, outputPathStr);
 	if(prefixLen>0)
 	{
-		strcat(contigIndexFile, outputPrefixName);
+		strcat(contigIndexFile, outputPrefix);
 		strcat(contigIndexFile, "_");
 	}
 	strcat(contigIndexFile, "contigIndex.bin");
@@ -188,28 +190,28 @@ short setGlobalParas(const char *outputPathName, const char *outputPrefixName, c
 	strcpy(readListFiles[0], outputPathStr);
 	if(prefixLen>0)
 	{
-		strcat(readListFiles[0], outputPrefixName);
+		strcat(readListFiles[0], outputPrefix);
 		strcat(readListFiles[0], "_");
 	}
 	strcat(readListFiles[0], "readList1.bin");
 	strcpy(readListFiles[1], outputPathStr);
 	if(prefixLen>0)
 	{
-		strcat(readListFiles[1], outputPrefixName);
+		strcat(readListFiles[1], outputPrefix);
 		strcat(readListFiles[1], "_");
 	}
 	strcat(readListFiles[1], "readList2.bin");
 	strcpy(readListFiles[2], outputPathStr);
 	if(prefixLen>0)
 	{
-		strcat(readListFiles[2], outputPrefixName);
+		strcat(readListFiles[2], outputPrefix);
 		strcat(readListFiles[2], "_");
 	}
 	strcat(readListFiles[2], "shared_RL.bin");
 	strcpy(readListFiles[3], outputPathStr);
 	if(prefixLen>0)
 	{
-		strcat(readListFiles[3], outputPrefixName);
+		strcat(readListFiles[3], outputPrefix);
 		strcat(readListFiles[3], "_");
 	}
 	strcat(readListFiles[3], "monoReadList.bin");
@@ -228,7 +230,7 @@ short setGlobalParas(const char *outputPathName, const char *outputPrefixName, c
 	strcpy(contigListFile, outputPathStr);
 	if(prefixLen>0)
 	{
-		strcat(contigListFile, outputPrefixName);
+		strcat(contigListFile, outputPrefix);
 		strcat(contigListFile, "_");
 	}
 	strcat(contigListFile, "contigList.bin");
@@ -241,7 +243,7 @@ short setGlobalParas(const char *outputPathName, const char *outputPrefixName, c
 	strcpy(meanSdevFile, outputPathStr);
 	if(prefixLen>0)
 	{
-		strcat(meanSdevFile, outputPrefixName);
+		strcat(meanSdevFile, outputPrefix);
 		strcat(meanSdevFile, "_");
 	}
 	strcat(meanSdevFile, "meanSdev");
@@ -250,7 +252,7 @@ short setGlobalParas(const char *outputPathName, const char *outputPrefixName, c
 	strcpy(contigOverlapFile, outputPathStr);
 	if(prefixLen>0)
 	{
-		strcat(contigOverlapFile, outputPrefixName);
+		strcat(contigOverlapFile, outputPrefix);
 		strcat(contigOverlapFile, "_");
 	}
 	strcat(contigOverlapFile, "contigOverlap.txt");
@@ -266,7 +268,7 @@ short setGlobalParas(const char *outputPathName, const char *outputPrefixName, c
 	strcpy(linkInfoFile, outputPathStr);
 	if(prefixLen>0)
 	{
-		strcat(linkInfoFile, outputPrefixName);
+		strcat(linkInfoFile, outputPrefix);
 		strcat(linkInfoFile, "_");
 	}
 	strcat(linkInfoFile, "contigLinkInfo.txt");
@@ -275,7 +277,7 @@ short setGlobalParas(const char *outputPathName, const char *outputPrefixName, c
 	strcpy(averLinkNumFile, outputPathStr);
 	if(prefixLen>0)
 	{
-		strcat(averLinkNumFile, outputPrefixName);
+		strcat(averLinkNumFile, outputPrefix);
 		strcat(averLinkNumFile, "_");
 	}
 	strcat(averLinkNumFile, "averLinkNum.txt");
@@ -284,7 +286,7 @@ short setGlobalParas(const char *outputPathName, const char *outputPrefixName, c
 	strcpy(scafGraphFile, outputPathStr);
 	if(prefixLen>0)
 	{
-		strcat(scafGraphFile, outputPrefixName);
+		strcat(scafGraphFile, outputPrefix);
 		strcat(scafGraphFile, "_");
 	}
 	strcat(scafGraphFile, "scafGraph.bin");
@@ -293,7 +295,7 @@ short setGlobalParas(const char *outputPathName, const char *outputPrefixName, c
 	strcpy(scafSeqFile, outputPathStr);
 	if(prefixLen>0)
 	{
-		strcat(scafSeqFile, outputPrefixName);
+		strcat(scafSeqFile, outputPrefix);
 		strcat(scafSeqFile, "_");
 	}
 	strcat(scafSeqFile, "scaffolds.fa");
@@ -836,6 +838,7 @@ short startScaffolding()
 	}
 
 
+
 	if(gapFillFlag==YES)
 	{
 		if(gapFilling(scafGraphFile, monoReadSeqFile, readListFiles[3], contigOverlapFileAfterFapFilling, contigsFileAfterGapFilling, readListFilesAfterOverlap[0], readListFilesAfterOverlap[1], readSeqFile, meanSdevFile, contigOverlapFile, contigsFileAfterOverlap)==FAILED)
@@ -860,6 +863,8 @@ short startScaffolding()
 			return FAILED;
 		}
 	}
+
+
 
 	return SUCCESSFUL;
 }

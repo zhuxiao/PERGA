@@ -65,10 +65,20 @@ extern double minLongKmerOcc;
 extern double lockedReadsNumThres;
 extern double minReadsNumPEHashThres;
 extern double maxOccNumFaiedPE;
+extern int navigationFlag;
+
+extern double *naviOccQueue;
+extern int itemNumNaviOccQueue;
+extern int maxItemNumNaviOccQueue;
+extern int frontRowNaviOccQueue;
+extern int rearRowNaviOccQueue;
+extern double lowOccThresNaviOccQueue;
 
 extern int kmer_len;
-extern int occsNumSE[4];  //下一个kmer的得分，对应ACGT的顺序
-extern int occsNumPE[4];
+extern int occsNumSE[4], occsNumPE[4];  //下一个kmer的得分，对应ACGT的顺序
+
+extern int maxOccIndexSE, maxOccIndexPE, secondOccIndexSE, secondOccIndexPE;
+extern double maxOccSE, maxOccPE, secondOccSE, secondOccPE;
 
 extern short assemblyRound; //FRIST_ROUND_ASSEMBLY  or SECOND_ROUND_ASSEMBLY
 extern int lockedReadsNum;

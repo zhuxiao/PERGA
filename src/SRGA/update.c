@@ -109,7 +109,7 @@ int updateDecisionTable(kmertype *tmp_kmers[2])
 						this_assemblingRead->kmerunappeartimes++;
 					}
 
-		/*
+/*
 					if(assemblingreadtable[i].lastpos>0)
 					{  //该read上次拼接出现，当次拼接未出现, 开始新的未出现连续块
 						assemblingreadtable[i].kmerunappeartimes++;
@@ -119,7 +119,7 @@ int updateDecisionTable(kmertype *tmp_kmers[2])
 					{  //该read上次拼接两次未出现
 						assemblingreadtable[i].kmerunappeartimes++;
 					}
-		*/
+*/
 				}
 			}else if(tmp_kmers[j]==NULL && ((j==0 && this_assemblingRead->orientation==ORIENTATION_PLUS) || (j==1 && this_assemblingRead->orientation==ORIENTATION_MINUS)))
 			{ //read为正向且正向kmer为空; 或read为反向且反向互补kmer为空

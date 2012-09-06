@@ -24,7 +24,8 @@ int outputContigEnd5(contigtype *contighead, int nodeNum);
 short outputUndelKmerpos(graphtype *graph);
 short releaseGraph(graphtype *graph);
 short outputReadsInDecisionTable(assemblingreadtype *decisionTable, int readsNum);
-short outputReadsInDecisionTableToFile(assemblingreadtype *decisionTable, int readsNum);
+short outputReadsInDecisionTableToFile(assemblingreadtype *decisionTable, int readsNum, int contigID, int contigIndex);
+short outputFailedReadsInDecisionTable(assemblingreadtype *decisionTable, int itemNumDecisionTable, int contigID, int contigIndex);
 short outputLockedReadsInDecisionTable(assemblingreadtype *decisionTable, int readsNum);
 short outputMatedReadsInDecisionTable(assemblingreadtype *decisionTable, int readsNum);
 short outputKmer(graphtype *graph, int hashcode, uint64_t *kmerSeqInt); //输出kmer中的内容
@@ -203,6 +204,10 @@ int computeKmerOccNumLockedByPE(kmertype *tmp_kmers[2], int *occNum);
 int computeLongKmerOccNumByPE(kmertype *tmp_kmers[2], int *occNum, int length_k, int contigNodesNum, int assemblyRound);
 short validReadPair(uint64_t readID);
 int trimContigTailByReadLen(contigtype *contighead, contigtype **contigtail, contigtype **successContig, int *contigNodesNum, int assemblyRound);
+short setEmptyNaviOccQueue(double *naviOccQueuePara, int *itemNumNaviOccQueuePara, int *frontRowNaviOccQueuePara, int *rearRowNaviOccQueuePara);
+short updateNaviOccQueue(double *naviOccQueuePara, int *itemNumNaviOccQueuePara, int *frontRowNaviOccQueuePara, int *rearRowNaviOccQueuePara, double maxOccNum);
+short calcAverOccNaviOccQueue(double *averOccNum, double *naviOccQueuePara, int itemNumNaviOccQueuePara);
+short getLowOccLenNaviOccQueue(int *lowLen, double *naviOccQueuePara, int itemNumNaviOccQueuePara, int frontRowNaviOccQueuePara);
 //================= PEAssembly.c 函数声明 结束 ================/
 
 #endif // METHODS_H_INCLUDED

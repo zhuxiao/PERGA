@@ -14,6 +14,7 @@
 //=========== global variables ============
 extern char inputPathStr[256];
 extern char outputPathStr[256];
+extern char outputPrefix[256];
 
 extern char contigsFile[256];
 extern char contigsFileFiltered[256];

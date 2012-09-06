@@ -640,6 +640,11 @@ short outputContigSeqRegionsInScaf(char *contigRegionFile, contigOverlapIndex *p
 	char fullContigRegionFile[256];
 
 	strcpy(fullContigRegionFile, outputPathStr);
+	if(strlen(outputPrefix)>0)
+	{
+		strcat(fullContigRegionFile, outputPrefix);
+		strcat(fullContigRegionFile, "_");
+	}
 	strcat(fullContigRegionFile, contigRegionFile);
 
 

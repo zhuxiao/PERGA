@@ -58,7 +58,7 @@ short fillGaps(const char *newContigOverlapInfoFile, const char *newContigFile, 
 
 	// ########################## Debug information #######################
 #if DEBUG_FLAG
-	if(checkScafKmersInGrapInScaf("../monoReadSeq.txt", scafGrapDeBruijn)==FAILED)
+	if(checkScafKmersInGrapInScaf(monoReadSeqFile, scafGrapDeBruijn)==FAILED)
 	{
 		printf("line=%d, In %s(), there are some errors in scafGrap in local assembly, error!\n", __LINE__, __func__);
 		return FAILED;

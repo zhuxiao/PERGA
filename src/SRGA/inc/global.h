@@ -46,8 +46,10 @@ double timeuse_deBruijn;
 
 
 //*********************** contig.c **************************
-int occsNumSE[4];  //下一个kmer的得分，对应ACGT的顺序
-int occsNumPE[4];
+int occsNumSE[4], occsNumPE[4];  //下一个kmer的得分，对应ACGT的顺序
+
+int maxOccIndexSE, maxOccIndexPE, secondOccIndexSE, secondOccIndexPE;
+double maxOccSE, maxOccPE, secondOccSE, secondOccPE;
 
 int readLenInFile;					// the read length in the data file
 //int readLenCutOff;					// the read length after cutting at the 3' end of reads
@@ -69,6 +71,14 @@ double minLongKmerOcc;
 double lockedReadsNumThres;
 double minReadsNumPEHashThres;
 double maxOccNumFaiedPE;
+int navigationFlag;
+
+double *naviOccQueue;
+int itemNumNaviOccQueue;
+int maxItemNumNaviOccQueue;
+int frontRowNaviOccQueue;
+int rearRowNaviOccQueue;
+double lowOccThresNaviOccQueue;
 
 //unsigned int thiskmerseq = 0;
 

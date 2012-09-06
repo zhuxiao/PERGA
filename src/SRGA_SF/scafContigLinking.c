@@ -1020,9 +1020,9 @@ short linkContigs(const char *linkResultFile)
 	while(firstContigID<=contigsNum)
 	{
 		//############################ Debug information ######################
-#if DEBUG_OUT_FLAG
+#if DEBUG_FLAG
 		printf("============ Begin linking scaffolds: %d ============\n", linkID);
-		if(linkID==35)
+		if(linkID==2)
 		{
 			printf("$$$$$$$$$$$$$$$$$$$$$ linkID=%d!\n", linkID);
 		}
@@ -1111,6 +1111,20 @@ short linkContigs(const char *linkResultFile)
 					}
 				}else
 				{
+					if(maxRowColNode->secondMaxValue>0.1*averLinkNum && contigInfoArr[maxRowColNode->contigID1-1].onlyEnd5==YES)
+					{
+						if(changeMaxRowCol(maxRowColNode, contigLinkArr, headRowContigLinkArr, contigInfoArr, linkRound, YES)==FAILED)
+						{
+							printf("line=%d, In %s(), cannot change the first round to the second round, error!\n", __LINE__, __func__);
+							return FAILED;
+						}
+
+						linkRound ++;
+						continue;
+					}
+
+
+
 //					if(maxRowColNode->maxValue<15)
 //					{
 //						if(changeMaxRowCol(maxRowColNode, contigLinkArr, headRowContigLinkArr, contigInfoArr, linkRound, YES)==FAILED)
@@ -1185,6 +1199,19 @@ short linkContigs(const char *linkResultFile)
 					}
 				}else
 				{
+					if(maxRowColNode->secondMaxValue>0.1*averLinkNum && contigInfoArr[maxRowColNode->contigID2-1].onlyEnd5==YES)
+					{
+						if(changeMaxRowCol(maxRowColNode, contigLinkArr, headRowContigLinkArr, contigInfoArr, linkRound, YES)==FAILED)
+						{
+							printf("line=%d, In %s(), cannot change the first round to the second round, error!\n", __LINE__, __func__);
+							return FAILED;
+						}
+
+						linkRound ++;
+						break;
+					}
+
+
 //					if(maxRowColNode->maxValue<15)
 //					{
 //						if(changeMaxRowCol(maxRowColNode, contigLinkArr, headRowContigLinkArr, contigInfoArr, linkRound, YES)==FAILED)
@@ -1556,8 +1583,8 @@ short getFirstLinkedContigs(int *firstContigID, maxRowCol *pMaxRowColNode, conti
 						}
 					}else
 					{
-						//satisfiedFlag = YES;
-						satisfiedFlag = NO;
+						satisfiedFlag = YES;
+						//satisfiedFlag = NO;
 					}
 				}
 
