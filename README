@@ -2,7 +2,7 @@ SRGA - Sequence Reads Guided Assembler
 ============================
 
 
-SRGA is a short read guided assembler that combined de Bruijn graph strategy and
+SRGA is a sequence reads guided assembler that combined de Bruijn graph strategy and
 overlap strategy together to perform the assembly by using read overlaps represented
 by their overlapping k-mers.
 
