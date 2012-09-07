@@ -292,10 +292,10 @@ typedef struct scafSuccessReadNode
 /* scafAssemblingReadNode in scaffolding */
 typedef struct scafAssemblingReadNode
 {
-	uint64_t rid: 56;					// read ID
+	uint64_t rid: 49;					// read ID
 
 	uint64_t status: 2;					// Status: ASSEMBLING_STATUS, SUCCESSFUL_STATUS, FAILED_STATUS
-	uint64_t kmerunappearblocks: 2;		// scafKmer continuous disappeared blocks number
+	uint64_t kmerunappearblocks: 8;		// scafKmer continuous disappeared blocks number
 	uint64_t delsign: 1;				// delete flag
 	uint64_t locked: 1;					// lock flag
 	uint64_t matedFlag: 1;				// the mated read

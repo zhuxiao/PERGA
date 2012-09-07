@@ -482,7 +482,7 @@ short generateContigOverlapInfo()
 	for(i=0; i<scaffoldsNumInCOI; i++)
 	{
 		//####################### Deubg information #####################
-#if DEBUG_OUT_FLAG
+#if DEBUG_FLAG
 		printf("\n=================== scaffold: %d, itemsNum: %d ================\n", contigOverlapIndexArr[i].scaffoldID, contigOverlapIndexArr[i].rowsNum);
 #endif
 		//####################### Deubg information #####################
@@ -496,11 +496,11 @@ short generateContigOverlapInfo()
 			for(j=0; j<rowsNum; j++)
 			{
 				//####################### Debug information ###################
-#if DEBUG_OUT_FLAG
-				//if(pContigOverlapInfo[j].contigID1==5757 && pContigOverlapInfo[j].contigID2==5134)
-				//{
-				//	printf("contig1: [%d,%d,%d]; contig2: [%d,%d,%d]\n", pContigOverlapInfo[j].contigID1, pContigOverlapInfo[j].orientation1, contigInfoArr[pContigOverlapInfo[j].contigID1-1].contigLen, pContigOverlapInfo[j].contigID2, pContigOverlapInfo[j].orientation2, contigInfoArr[pContigOverlapInfo[j].contigID2-1].contigLen);
-				//}
+#if DEBUG_FLAG
+				if(pContigOverlapInfo[j].contigID1==3 && pContigOverlapInfo[j].contigID2==61)
+				{
+					printf("contig1: [%d,%d,%d]; contig2: [%d,%d,%d]\n", pContigOverlapInfo[j].contigID1, pContigOverlapInfo[j].orientation1, contigInfoArr[pContigOverlapInfo[j].contigID1-1].contigLen, pContigOverlapInfo[j].contigID2, pContigOverlapInfo[j].orientation2, contigInfoArr[pContigOverlapInfo[j].contigID2-1].contigLen);
+				}
 
 				printf("*****contig1: [%d,%d,%d]; contig2: [%d,%d,%d]\n", pContigOverlapInfo[j].contigID1, pContigOverlapInfo[j].orientation1, contigInfoArr[pContigOverlapInfo[j].contigID1-1].contigLen, pContigOverlapInfo[j].contigID2, pContigOverlapInfo[j].orientation2, contigInfoArr[pContigOverlapInfo[j].contigID2-1].contigLen);
 #endif
@@ -515,7 +515,7 @@ short generateContigOverlapInfo()
 		}else if(contigOverlapIndexArr[i].linkedNum==1)
 		{
 			//####################### Debug information ###################
-#if DEBUG_OUT_FLAG
+#if DEBUG_FLAG
 			printf("*****contig1: [%d,0,%d]; contig2: [0,0,0]\n", pContigOverlapInfo[0].contigID1, contigInfoArr[pContigOverlapInfo[0].contigID1-1].contigLen);
 #endif
 			//####################### Debug information ###################
@@ -716,6 +716,9 @@ short updateContigOverlapLen(contigOverlap *pContigOverlapInfo, contigInfo *pCon
 					{
 						if(gapSize<minAdjustGapSizeThres)
 						{ // gapSize < -10
+							pContigOverlapInfo->gapSize = gapSize;
+							pContigOverlapInfo->mergeFlag = NO;
+
 							// update the update length by cutting uncovered contig ends
 							if(updateOverlapLenByCutUncoveredContigEnds(pContigOverlapInfo, pContigInfoArr)==FAILED)
 							{
@@ -830,6 +833,9 @@ short updateContigOverlapLen(contigOverlap *pContigOverlapInfo, contigInfo *pCon
 
 							}else
 							{
+								pContigOverlapInfo->gapSize = gapSize;
+								pContigOverlapInfo->mergeFlag = NO;
+
 								// update the update length by cutting uncovered contig ends
 								if(updateOverlapLenByCutUncoveredContigEnds(pContigOverlapInfo, pContigInfoArr)==FAILED)
 								{
@@ -839,6 +845,9 @@ short updateContigOverlapLen(contigOverlap *pContigOverlapInfo, contigInfo *pCon
 							}
 						}else
 						{ // the overlap length is not similar with the gap size, may be there are some errors at contig ends
+							pContigOverlapInfo->gapSize = gapSize;
+							pContigOverlapInfo->mergeFlag = NO;
+
 							// update the update length by cutting uncovered contig ends
 							if(updateOverlapLenByCutUncoveredContigEnds(pContigOverlapInfo, pContigInfoArr)==FAILED)
 							{
@@ -2864,7 +2873,7 @@ short updateOverlapLenByCutUncoveredContigEnds(contigOverlap *pContigOverlapInfo
 	} // end for(endCutRound=0; endCutRound<maxEndCutRoundNum; endCutRound++)
 
 	// No valid overlaps, break the links without cutting contig ends
-	pContigOverlapInfo->breakFlag = YES;
+	//pContigOverlapInfo->breakFlag = YES;
 
 	return SUCCESSFUL;
 }

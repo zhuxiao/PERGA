@@ -40,7 +40,7 @@ short buildReadLists(const char *readListFile1, const char *readListFile2, const
 	}
 
 	//################################ Debug information ######################
-#if DEBUG_OUT_FLAG
+#if DEBUG_FLAG
 	printf("readNum0=%ld, readNum1=%ld, readNum2=%ld\n", readNumInRL[0], readNumInRL[1], readNumInRL[2]);
 	printf("matchItemNum0=%ld, matchItemNum1=%ld, matchItemNum2=%ld\n", matchItemNumInRP[0], matchItemNumInRP[1], matchItemNumInRP[2]);
 #endif

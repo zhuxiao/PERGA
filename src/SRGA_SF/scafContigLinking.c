@@ -936,9 +936,9 @@ short initParaLinking(const char *averLinkNumFile)
 		maxSecondLinkNumThres = MAX_SECOND_LINKNUM_THRES;
 	}
 
-	printf("minLinksNumContigsThres=%.2f\n", minLinksNumContigsThres);
-	printf("maxSecondLinkNumThres=%.2f\n", maxSecondLinkNumThres);
-	printf("maxRatioSecondFirstLinkNum=%.2f\n", maxRatioSecondFirstLinkNum);
+	//printf("minLinksNumContigsThres=%.2f\n", minLinksNumContigsThres);
+	//printf("maxSecondLinkNumThres=%.2f\n", maxSecondLinkNumThres);
+	//printf("maxRatioSecondFirstLinkNum=%.2f\n", maxRatioSecondFirstLinkNum);
 
 	return SUCCESSFUL;
 }
@@ -1022,7 +1022,7 @@ short linkContigs(const char *linkResultFile)
 		//############################ Debug information ######################
 #if DEBUG_FLAG
 		printf("============ Begin linking scaffolds: %d ============\n", linkID);
-		if(linkID==2)
+		if(linkID==1)
 		{
 			printf("$$$$$$$$$$$$$$$$$$$$$ linkID=%d!\n", linkID);
 		}
@@ -1057,6 +1057,8 @@ short linkContigs(const char *linkResultFile)
 			printf("line=%d, In %s(), cannot mark contigGraph node, error!\n", __LINE__, __func__);
 			return FAILED;
 		}
+		contigInfoArr[maxRowColNode->contigID1-1].used = YES;
+		contigInfoArr[maxRowColNode->contigID2-1].used = YES;
 
 		// link contigs given a contig
 		while(linkRound<=SECOND_LINK_ROUND)
@@ -1079,6 +1081,7 @@ short linkContigs(const char *linkResultFile)
 					return FAILED;
 				}
 
+
 				//if(maxRowColNode->maxValue<minLinksNumContigsThres || (maxRowColNode->secondMaxValue>0 && ((double)maxRowColNode->secondMaxValue/maxRowColNode->maxValue>maxRatioSecondFirstLinkNum || maxRowColNode->secondMaxValue>minLinksNumContigsThres*secondLinkNumFactor)))
 				if(maxRowColNode->maxValue<minLinksNumContigsThres || (maxRowColNode->secondMaxValue>0 && ((double)maxRowColNode->secondMaxValue/maxRowColNode->maxValue>maxRatioSecondFirstLinkNum || maxRowColNode->secondMaxValue>maxSecondLinkNumThres)))
 				{
@@ -1093,8 +1096,25 @@ short linkContigs(const char *linkResultFile)
 					//break;
 				}else if(contigInfoArr[maxRowColNode->contigID2-1].onlyEnd5==NO)
 				{
-					returnCode = isLinkSingleton(maxRowColNode, contigGraphArr, linkRound);
-					if(returnCode==NO)
+					if(contigInfoArr[maxRowColNode->contigID2-1].used==NO)
+					{
+						returnCode = isLinkSingleton(maxRowColNode, contigGraphArr, linkRound);
+						if(returnCode==NO)
+						{
+							if(changeMaxRowCol(maxRowColNode, contigLinkArr, headRowContigLinkArr, contigInfoArr, linkRound, YES)==FAILED)
+							{
+								printf("line=%d, In %s(), cannot change the first round to the second round, error!\n", __LINE__, __func__);
+								return FAILED;
+							}
+
+							linkRound ++;
+							continue;
+						}else if(returnCode==ERROR)
+						{
+							printf("line=%d, In %s(), cannot check link singleton, error!\n", __LINE__, __func__);
+							return FAILED;
+						}
+					}else
 					{
 						if(changeMaxRowCol(maxRowColNode, contigLinkArr, headRowContigLinkArr, contigInfoArr, linkRound, YES)==FAILED)
 						{
@@ -1104,10 +1124,6 @@ short linkContigs(const char *linkResultFile)
 
 						linkRound ++;
 						continue;
-					}else if(returnCode==ERROR)
-					{
-						printf("line=%d, In %s(), cannot check link singleton, error!\n", __LINE__, __func__);
-						return FAILED;
 					}
 				}else
 				{
@@ -1163,6 +1179,8 @@ short linkContigs(const char *linkResultFile)
 					printf("line=%d, In %s(), cannot mark contigGraph node, error!\n", __LINE__, __func__);
 					return FAILED;
 				}
+				contigInfoArr[maxRowColNode->contigID2-1].used = YES;
+
 			}else
 			{ // the second link round
 
@@ -1187,15 +1205,22 @@ short linkContigs(const char *linkResultFile)
 					break;
 				}else if(contigInfoArr[maxRowColNode->contigID1-1].onlyEnd5==NO)
 				{
-					returnCode = isLinkSingleton(maxRowColNode, contigGraphArr, linkRound);
-					if(returnCode==NO)
+					if(contigInfoArr[maxRowColNode->contigID1-1].used==NO)
+					{
+						returnCode = isLinkSingleton(maxRowColNode, contigGraphArr, linkRound);
+						if(returnCode==NO)
+						{
+							linkRound ++;
+							break;
+						}else if(returnCode==ERROR)
+						{
+							printf("line=%d, In %s(), cannot check link singleton, error!\n", __LINE__, __func__);
+							return FAILED;
+						}
+					}else
 					{
 						linkRound ++;
 						break;
-					}else if(returnCode==ERROR)
-					{
-						printf("line=%d, In %s(), cannot check link singleton, error!\n", __LINE__, __func__);
-						return FAILED;
 					}
 				}else
 				{
@@ -1243,6 +1268,8 @@ short linkContigs(const char *linkResultFile)
 					printf("line=%d, In %s(), cannot mark contigGraph node, error!\n", __LINE__, __func__);
 					return FAILED;
 				}
+				contigInfoArr[maxRowColNode->contigID1-1].used = YES;
+
 			}
 		} // while(1)
 

@@ -26,6 +26,8 @@
 #define DEBUG_FLAG					(NO)		// YES / NO
 #define DEBUG_OUT_FLAG				(NO)		// YES / NO
 
+#define DELETE_FILES				(YES)		// YES / NO: delete the files when process finished?
+
 /* the Strand flag */
 #define ORIENTATION_PLUS			0
 #define ORIENTATION_MINUS			1
@@ -42,6 +44,7 @@
 //#define KMER_MASK					((1 << (KMER_SIZE<<1))-1)
 
 #define MAX_READ_BUF_SIZE			1000000
+#define MAX_READ_LEN				36
 
 #define FIRST_LINK_ROUND			1
 #define SECOND_LINK_ROUND			2
@@ -51,10 +54,12 @@
 #define SECOND_LINKNUM_FACTOR				3  //=================================
 #define BREAK_LINKNUM_FACTOR				5
 
-#define MIN_FIRST_LINKNUM_FACTOR			0.2f
+//#define MIN_FIRST_LINKNUM_FACTOR			0.2f
+#define MIN_FIRST_LINKNUM_FACTOR			0.1f
 #define MAX_FIRST_LINKNUM_THRES				40
 #define MAX_SECOND_LINKNUM_THRES			15
-#define MIN_BREAK_LINKNUM_THRES				15
+//#define MIN_BREAK_LINKNUM_THRES				15
+#define MIN_BREAK_LINKNUM_THRES				10
 
 
 #define MIN_OVERLAP_THRESHOLD				3

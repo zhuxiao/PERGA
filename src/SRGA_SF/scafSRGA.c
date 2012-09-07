@@ -315,6 +315,9 @@ short setGlobalParas(const char *outputPathName, const char *outputPrefixName, c
 		return FAILED;
 	}
 
+	if(readLen>MAX_READ_LEN)
+		readLen = MAX_READ_LEN;
+
 	//initialize the variables
 	entriesPerRead = ((readLen-1)/32) + 1;
 	if(readLen%32==0)
@@ -389,6 +392,32 @@ void freeGlobalParas()
 {
 	int i;
 	for(i=0; i<readFileNum; i++) { free(readFilesInput[i]); readFilesInput[i] = NULL; }
+
+	if(DELETE_FILES)
+	{
+		// delete files
+		remove(averLinkNumFile);
+		remove(contigIndexFile);
+		remove(linkInfoFile);
+		remove(contigListFile);
+		remove(contigListFileAfterOverlap);
+		remove(contigOverlapFile);
+		remove(contigOverlapFileAfterFapFilling);
+		remove(meanSdevFile);
+		remove(monoReadSeqFile);
+
+		remove(contigsFileAfterOverlap);
+		remove(contigsFileAfterGapFilling);
+
+		for(i=0; i<4; i++) remove(readListFiles[i]);
+		for(i=0; i<3; i++) remove(readListFilesAfterOverlap[i]);
+
+		remove(readSeqFile);
+
+		for(i=0; i<2; i++) remove(readMatchFiles[i]);
+
+		remove(scafGraphFile);
+	}
 
 }
 
@@ -636,45 +665,51 @@ short getMinReadLenFromFastqFilesInScaf(int *readLenInFile, char **readFilesInpu
  *  @return:
  *  	If succeeds, return SUCCESSFUL; otherwise, return FAILED.
  */
-short getReadLenFromFastaInScaf(int *tmpReadLen, const char *fastqFile)
+short getReadLenFromFastaInScaf(int *tmpReadLen, const char *fastaFile)
 {
-	FILE *fpFastq;
-	char seq_data[5000];
-	int i, returnCode, tmpLen, validFlag;
+	FILE *fpFasta;
+	char ch, seq_data[5000];
+	int i, tmpReadsNum, tmpLen, validFlag;
 
-	fpFastq = fopen(fastqFile, "r");
-	if(fpFastq==NULL)
+	fpFasta = fopen(fastaFile, "r");
+	if(fpFasta==NULL)
 	{
-		printf("line=%d, In %s(), cannot open file [ %s ], error!\n", __LINE__, __func__, fastqFile);
+		printf("line=%d, In %s(), cannot open file [ %s ], error!\n", __LINE__, __func__, fastaFile);
 		return FAILED;
 	}
 
 	tmpLen = 0;
 	validFlag = YES;
-	for(i=0; i<100; i++)
+	tmpReadsNum = 0;
+	while(!feof(fpFasta))
 	{
-		returnCode = getSingleReadFasta(fpFastq, seq_data);
-		if(returnCode==ERROR)
+		i = 0;
+		ch = fgetc(fpFasta);
+		while(ch!='\n') ch = fgetc(fpFasta);
+
+		while(ch!='>' && ch!=-1)
 		{
-			printf("line=%d, In %s(), cannot get single read, error!\n", __LINE__, __func__);
-			return FAILED;
-		}else if(returnCode==FAILED)
+			if(ch!='\n')
+			{
+				seq_data[i++] = ch;
+			}
+			ch = fgetc(fpFasta);
+		}
+		seq_data[i] = '\0';
+
+		if(ch=='>')  //a read is read finished
 		{
-			if(tmpLen>0 && tmpLen!=strlen(seq_data))
+			if(tmpReadsNum==0)
+				tmpLen = strlen(seq_data);
+			else if(tmpLen!=strlen(seq_data))
 			{
 				validFlag = NO;
 				break;
 			}
 
-			break;
-		}
-
-		if(i==0)
-			tmpLen = strlen(seq_data);
-		else if(tmpLen!=strlen(seq_data))
-		{
-			validFlag = NO;
-			break;
+			tmpReadsNum ++;
+			if(tmpReadsNum>=100)
+				break;
 		}
 	}
 
@@ -684,15 +719,15 @@ short getReadLenFromFastaInScaf(int *tmpReadLen, const char *fastqFile)
 	{
 		*tmpReadLen = 0;
 
-		fclose(fpFastq);
-		fpFastq = NULL;
+		fclose(fpFasta);
+		fpFasta = NULL;
 
 		printf("Reads in data sets should be in equal size.\n");
 		return FAILED;
 	}
 
-	fclose(fpFastq);
-	fpFastq = NULL;
+	fclose(fpFasta);
+	fpFasta = NULL;
 
 	return SUCCESSFUL;
 }
@@ -705,8 +740,8 @@ short getReadLenFromFastaInScaf(int *tmpReadLen, const char *fastqFile)
 short getReadLenFromFastqInScaf(int *tmpReadLen, const char *fastqFile)
 {
 	FILE *fpFastq;
-	char seq_data[5000];
-	int i, returnCode, tmpLen, validFlag;
+	char ch, seq_data[5000];
+	int i, line_index, tmpReadsNum, tmpLen, validFlag;
 
 	fpFastq = fopen(fastqFile, "r");
 	if(fpFastq==NULL)
@@ -717,30 +752,62 @@ short getReadLenFromFastqInScaf(int *tmpReadLen, const char *fastqFile)
 
 	tmpLen = 0;
 	validFlag = YES;
-	for(i=0; i<100; i++)
+	tmpReadsNum = 0;
+	line_index = 0;
+	while(!feof(fpFastq))
 	{
-		returnCode = getSingleReadFastq(fpFastq, seq_data);
-		if(returnCode==ERROR)
+		if(line_index==0)  //the sequence name line
 		{
-			printf("line=%d, In %s(), cannot get single read, error!\n", __LINE__, __func__);
-			return FAILED;
-		}else if(returnCode==FAILED)
+			ch = fgetc(fpFastq);
+			while(ch!='\n' && ch!=-1)
+			{
+				ch = fgetc(fpFastq);
+			}
+		}else if(line_index==1)  //the sequence line
 		{
-			if(tmpLen>0 && tmpLen!=strlen(seq_data))
+			i = 0;
+			ch = fgetc(fpFastq);
+			while(ch!='\n')
+			{
+				seq_data[i++] = ch;
+				ch = fgetc(fpFastq);
+			}
+			seq_data[i] = '\0';
+		}else if(line_index==2)  //the sequence name line
+		{
+			ch = fgetc(fpFastq);
+			while(ch!='\n')
+			{
+				ch = fgetc(fpFastq);
+			}
+		}else
+		{
+			//i = 0;
+			ch = fgetc(fpFastq);
+			while(ch!='\n'  && ch!=-1)
+			{
+				//qual_data[i++] = ch;
+				ch = fgetc(fpFastq);
+			}
+			//qual_data[i] = '\0';
+		}
+		line_index++;
+
+		if(line_index==4)  //a read is read finished
+		{
+			if(tmpReadsNum==0)
+				tmpLen = strlen(seq_data);
+			else if(tmpLen!=strlen(seq_data))
 			{
 				validFlag = NO;
 				break;
 			}
 
-			break;
-		}
+			tmpReadsNum ++;
+			if(tmpReadsNum>=100)
+				break;
 
-		if(i==0)
-			tmpLen = strlen(seq_data);
-		else if(tmpLen!=strlen(seq_data))
-		{
-			validFlag = NO;
-			break;
+			line_index = 0;
 		}
 	}
 

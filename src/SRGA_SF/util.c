@@ -458,7 +458,7 @@ short checkScafKmersInGrapInScaf(const char *monoSeqFile, scafGraph *pScafGrapDe
 		for(i=kmerSize; i<readLen-kmerSize+1; i++, pos++)
 		{
 			// generate the kmer integer sequence
-			if(generateKmerSeqIntInScaf(kmerSeqInt, readSeq)==FAILED)
+			if(generateKmerSeqIntInScaf(kmerSeqInt, readSeq+pos-1)==FAILED)
 			{
 				printf("line=%d, In %s(), cannot generate the kmer integer sequence, error!\n", __LINE__, __func__);
 				return FAILED;

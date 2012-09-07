@@ -1319,7 +1319,10 @@ short getSingleReadFasta(FILE *fpPE, char *readSeq)
 		while(ch!='>' && ch!=-1)
 		{
 			if(ch!='\n')
-				readSeq[i++] = ch;
+			{
+				if(i<readLen)
+					readSeq[i++] = ch;
+			}
 			ch = fgetc(fpPE);
 		}
 		readSeq[i] = '\0';
@@ -1356,19 +1359,17 @@ short getSingleReadFastq(FILE *fpPE, char *readSeq)
 	{
 		if(line_index==0)  //the sequence name line
 		{
-			i = 0;
 			ch = fgetc(fpPE);
 			while(ch!='\n' && ch!=-1)
-			{
 				ch = fgetc(fpPE);
-			}
 		}else if(line_index==1)  //the sequence line
 		{
 			i = 0;
 			ch = fgetc(fpPE);
 			while(ch!='\n')
 			{
-				readSeq[i++] = ch;
+				if(i<readLen)
+					readSeq[i++] = ch;
 				ch = fgetc(fpPE);
 			}
 			readSeq[i] = '\0';
@@ -1376,9 +1377,7 @@ short getSingleReadFastq(FILE *fpPE, char *readSeq)
 		{
 			ch = fgetc(fpPE);
 			while(ch!='\n')
-			{
 				ch = fgetc(fpPE);
-			}
 		}else
 		{
 			//i = 0;

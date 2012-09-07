@@ -27,7 +27,7 @@ short getReadsFileFormatInScaf(int *readsFileFormatType, char **readFilesInput, 
 short getReadLenFromFilesInScaf(int *readLen, char **readFilesInput, int readFileNum, int readsFileFormatType);
 short getMinReadLenFromFastaFilesInScaf(int *readLenInFile, char **readFilesInput, int readFileNum);
 short getMinReadLenFromFastqFilesInScaf(int *readLenInFile, char **readFilesInput, int readFileNum);
-short getReadLenFromFastaInScaf(int *tmpReadLen, const char *fastqFile);
+short getReadLenFromFastaInScaf(int *tmpReadLen, const char *fastaFile);
 short getReadLenFromFastqInScaf(int *tmpReadLen, const char *fastqFile);
 short startScaffolding();
 //######################## scafSRGA.c end ########################//

@@ -170,7 +170,7 @@ short initGapFillingParas()
 	hashTableSize = 15728661;
 	//hashTableSize = 1LLU << (kmerSize << 1);
 
-	printf("PEGivenType=%d\n", PEGivenType);
+	//printf("PEGivenType=%d\n", PEGivenType);
 	if(PEGivenType==INSERT_PE_GIVEN_TYPE)
 	{
 		printf("meanSizeInsert=%.2f\n", meanSizeInsert);
@@ -180,12 +180,12 @@ short initGapFillingParas()
 		printf("standardDev=%.2f\n", stardardDeviationInsert);
 	}
 
-	printf("kmerSize=%d\n", kmerSize);
-	printf("entriesPerKmer=%d\n", entriesPerKmer);
-	printf("lastEntryBaseNumKmer=%d\n", lastEntryBaseNumKmer);
-	printf("lastEntryMaskKmer=0x%lX\n", lastEntryMaskKmer);
-	printf("hashTableSize=%lu\n", hashTableSize);
-	printf("errorRegLenEnd3=%d\n", errorRegLenEnd3);
+	//printf("kmerSize=%d\n", kmerSize);
+	//printf("entriesPerKmer=%d\n", entriesPerKmer);
+	//printf("lastEntryBaseNumKmer=%d\n", lastEntryBaseNumKmer);
+	//printf("lastEntryMaskKmer=0x%lX\n", lastEntryMaskKmer);
+	//printf("hashTableSize=%lu\n", hashTableSize);
+	//printf("errorRegLenEnd3=%d\n", errorRegLenEnd3);
 
 
 	// allocate memory
@@ -271,7 +271,7 @@ short initMemGapFilling(const char *contigOverlapInfoFile, const char *meanSdevF
 	if(longKmerStepSize<1)
 		longKmerStepSize = 2;
 
-	printf("longKmerSize=%d, longKmerStepSize=%d\n", longKmerSize, longKmerStepSize);
+	//printf("longKmerSize=%d, longKmerStepSize=%d\n", longKmerSize, longKmerStepSize);
 
 
 	if(PEGivenType>=NONE_PE_GIVEN_TYPE)
@@ -308,13 +308,13 @@ short initMemGapFilling(const char *contigOverlapInfoFile, const char *meanSdevF
 		//maxOccNumFaiedPE = MAX_OCC_NUM_FAILED_PE_THRES;
 		maxNavigationNumSE = MAX_NAVI_NUM_SE_THRES;
 
-		printf("minKmerOccSE=%.2f, minKmerOccPE=%.2f\n", minKmerOccSE, minKmerOccPE);
-		printf("maxSecondOcc=%.2f\n", maxSecondOcc);
-		printf("maxFirstOcc=%.2f\n", maxFirstOcc);
-		printf("minLongKmerOcc=%.2f\n", minLongKmerOcc);
+		//printf("minKmerOccSE=%.2f, minKmerOccPE=%.2f\n", minKmerOccSE, minKmerOccPE);
+		//printf("maxSecondOcc=%.2f\n", maxSecondOcc);
+		//printf("maxFirstOcc=%.2f\n", maxFirstOcc);
+		//printf("minLongKmerOcc=%.2f\n", minLongKmerOcc);
 		//printf("minReadsNumPEHashThres=%.2f\n", minReadsNumPEHashThres);
-		printf("maxOccNumFaiedPE=%.2f\n", maxOccNumFaiedPE);
-		printf("maxNavigationNumSE=%d\n", maxNavigationNumSE);
+	//	printf("maxOccNumFaiedPE=%.2f\n", maxOccNumFaiedPE);
+		//printf("maxNavigationNumSE=%d\n", maxNavigationNumSE);
 	}else
 	{
 		minKmerOccSE = ceil(averKmerOcc * MIN_KMER_OCC_FACTOR);
@@ -336,14 +336,14 @@ short initMemGapFilling(const char *contigOverlapInfoFile, const char *meanSdevF
 			minLongKmerOcc = MIN_LONG_KMER_OCC_THRES;
 		}
 
-		printf("minKmerOccSE=%.2f\n", minKmerOccSE);
-		printf("maxSecondOcc=%.2f\n", maxSecondOcc);
-		printf("maxFirstOcc=%.2f\n", maxFirstOcc);
-		printf("minLongKmerOcc=%.2f\n", minLongKmerOcc);
+		//printf("minKmerOccSE=%.2f\n", minKmerOccSE);
+		//printf("maxSecondOcc=%.2f\n", maxSecondOcc);
+		//printf("maxFirstOcc=%.2f\n", maxFirstOcc);
+		//printf("minLongKmerOcc=%.2f\n", minLongKmerOcc);
 	}
 
 	lockedReadsNumThres = averKmerOcc;
-	printf("lockedReadsNumThres=%.2f\n", lockedReadsNumThres);
+	//printf("lockedReadsNumThres=%.2f\n", lockedReadsNumThres);
 
 	// initialize the variables
 	maxScafAssemblingReadsNumInArr = TABLE_SIZE_SCAFASSEMBLINGREAD;
@@ -590,8 +590,8 @@ short computeAverKmerOcc(double *averKmerOcc, scafGraph *pScafGrapDeBruijn)
 		return FAILED;
 	}
 
-	printf("filledBucketNum=%ld, filledRatio=%.2f, kmerNum=%lu\n", filledBucketNum, (double)filledBucketNum/hashTableSize, tmp_kmerNum);
-	printf("averKmerOcc=%.2f.\n", *averKmerOcc);
+	//printf("filledBucketNum=%ld, filledRatio=%.2f, kmerNum=%lu\n", filledBucketNum, (double)filledBucketNum/hashTableSize, tmp_kmerNum);
+	//printf("averKmerOcc=%.2f.\n", *averKmerOcc);
 
 	return SUCCESSFUL;
 }
