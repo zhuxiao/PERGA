@@ -2753,7 +2753,8 @@ short updateOverlapLenByCutUncoveredContigEnds(contigOverlap *pContigOverlapInfo
 
 							if(gapSize<maxAdjustGapSizeThres)
 							{ // -10 =< gapSize < 10
-								if((pContigInfoArr[contigID1-1].onlyEnd5==YES || pContigInfoArr[contigID2-1].onlyEnd5==YES) && validPairedNum_gapEstimate<breakLinkNumThres)
+								//if((pContigInfoArr[contigID1-1].onlyEnd5==YES || pContigInfoArr[contigID2-1].onlyEnd5==YES) && validPairedNum_gapEstimate<breakLinkNumThres)
+								if((pContigInfoArr[contigID1-1].shortFlag==YES || pContigInfoArr[contigID2-1].shortFlag==YES) && validPairedNum_gapEstimate<breakLinkNumThres)
 								{
 									pContigOverlapInfo->breakFlag = YES;
 								}else

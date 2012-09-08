@@ -868,6 +868,11 @@ short fillContigInfoArr(const char *contigFileName, contigInfo *pContigInfoArr)
 		else
 			pContigInfoArr[tmpContigNum].onlyEnd5 = NO;
 
+		if(contigLen<=1.5*contigEndLen)
+			pContigInfoArr[tmpContigNum].shortFlag = YES;
+		else
+			pContigInfoArr[tmpContigNum].shortFlag = NO;
+
 		tmpContigNum ++;
 	}
 
@@ -1022,7 +1027,7 @@ short linkContigs(const char *linkResultFile)
 		//############################ Debug information ######################
 #if DEBUG_FLAG
 		printf("============ Begin linking scaffolds: %d ============\n", linkID);
-		if(linkID==1)
+		if(linkID==10)
 		{
 			printf("$$$$$$$$$$$$$$$$$$$$$ linkID=%d!\n", linkID);
 		}
@@ -1083,7 +1088,8 @@ short linkContigs(const char *linkResultFile)
 
 
 				//if(maxRowColNode->maxValue<minLinksNumContigsThres || (maxRowColNode->secondMaxValue>0 && ((double)maxRowColNode->secondMaxValue/maxRowColNode->maxValue>maxRatioSecondFirstLinkNum || maxRowColNode->secondMaxValue>minLinksNumContigsThres*secondLinkNumFactor)))
-				if(maxRowColNode->maxValue<minLinksNumContigsThres || (maxRowColNode->secondMaxValue>0 && ((double)maxRowColNode->secondMaxValue/maxRowColNode->maxValue>maxRatioSecondFirstLinkNum || maxRowColNode->secondMaxValue>maxSecondLinkNumThres)))
+				//if(maxRowColNode->maxValue<minLinksNumContigsThres || (maxRowColNode->secondMaxValue>0 && ((double)maxRowColNode->secondMaxValue/maxRowColNode->maxValue>maxRatioSecondFirstLinkNum || maxRowColNode->secondMaxValue>maxSecondLinkNumThres)))
+				if(maxRowColNode->maxValue<minLinksNumContigsThres || (maxRowColNode->secondMaxValue>0 && ((double)maxRowColNode->secondMaxValue/maxRowColNode->maxValue>maxRatioSecondFirstLinkNum || (maxRowColNode->secondMaxValue>maxSecondLinkNumThres && (double)maxRowColNode->secondMaxValue/maxRowColNode->maxValue>0.3))))
 				{
 					if(changeMaxRowCol(maxRowColNode, contigLinkArr, headRowContigLinkArr, contigInfoArr, linkRound, YES)==FAILED)
 					{
@@ -1094,7 +1100,8 @@ short linkContigs(const char *linkResultFile)
 					linkRound ++;
 					continue;
 					//break;
-				}else if(contigInfoArr[maxRowColNode->contigID2-1].onlyEnd5==NO)
+				//}else if(contigInfoArr[maxRowColNode->contigID2-1].onlyEnd5==NO)
+				}else if(contigInfoArr[maxRowColNode->contigID2-1].shortFlag==NO)
 				{
 					if(contigInfoArr[maxRowColNode->contigID2-1].used==NO)
 					{
@@ -1127,7 +1134,8 @@ short linkContigs(const char *linkResultFile)
 					}
 				}else
 				{
-					if(maxRowColNode->secondMaxValue>0.1*averLinkNum && contigInfoArr[maxRowColNode->contigID1-1].onlyEnd5==YES)
+					//if(maxRowColNode->secondMaxValue>0.1*averLinkNum && contigInfoArr[maxRowColNode->contigID1-1].onlyEnd5==YES)
+					if(maxRowColNode->secondMaxValue>0.1*averLinkNum && contigInfoArr[maxRowColNode->contigID1-1].shortFlag==YES)
 					{
 						if(changeMaxRowCol(maxRowColNode, contigLinkArr, headRowContigLinkArr, contigInfoArr, linkRound, YES)==FAILED)
 						{
@@ -1137,6 +1145,24 @@ short linkContigs(const char *linkResultFile)
 
 						linkRound ++;
 						continue;
+					}else
+					{
+						returnCode = isLinkSingleton(maxRowColNode, contigGraphArr, linkRound);
+						if(returnCode==NO)
+						{
+							if(changeMaxRowCol(maxRowColNode, contigLinkArr, headRowContigLinkArr, contigInfoArr, linkRound, YES)==FAILED)
+							{
+								printf("line=%d, In %s(), cannot change the first round to the second round, error!\n", __LINE__, __func__);
+								return FAILED;
+							}
+
+							linkRound ++;
+							continue;
+						}else if(returnCode==ERROR)
+						{
+							printf("line=%d, In %s(), cannot check link singleton, error!\n", __LINE__, __func__);
+							return FAILED;
+						}
 					}
 
 
@@ -1199,11 +1225,13 @@ short linkContigs(const char *linkResultFile)
 
 
 				//if(maxRowColNode->maxValue<minLinksNumContigsThres || (maxRowColNode->secondMaxValue>0 && ((double)maxRowColNode->secondMaxValue/maxRowColNode->maxValue>maxRatioSecondFirstLinkNum || maxRowColNode->secondMaxValue>minLinksNumContigsThres*secondLinkNumFactor)))
-				if(maxRowColNode->maxValue<minLinksNumContigsThres || (maxRowColNode->secondMaxValue>0 && ((double)maxRowColNode->secondMaxValue/maxRowColNode->maxValue>maxRatioSecondFirstLinkNum || maxRowColNode->secondMaxValue>maxSecondLinkNumThres)))
+				//if(maxRowColNode->maxValue<minLinksNumContigsThres || (maxRowColNode->secondMaxValue>0 && ((double)maxRowColNode->secondMaxValue/maxRowColNode->maxValue>maxRatioSecondFirstLinkNum || maxRowColNode->secondMaxValue>maxSecondLinkNumThres)))
+				if(maxRowColNode->maxValue<minLinksNumContigsThres || (maxRowColNode->secondMaxValue>0 && ((double)maxRowColNode->secondMaxValue/maxRowColNode->maxValue>maxRatioSecondFirstLinkNum || (maxRowColNode->secondMaxValue>maxSecondLinkNumThres && (double)maxRowColNode->secondMaxValue/maxRowColNode->maxValue>0.3))))
 				{
 					linkRound ++;
 					break;
-				}else if(contigInfoArr[maxRowColNode->contigID1-1].onlyEnd5==NO)
+				//}else if(contigInfoArr[maxRowColNode->contigID1-1].onlyEnd5==NO)
+				}else if(contigInfoArr[maxRowColNode->contigID1-1].shortFlag==NO)
 				{
 					if(contigInfoArr[maxRowColNode->contigID1-1].used==NO)
 					{
@@ -1224,16 +1252,23 @@ short linkContigs(const char *linkResultFile)
 					}
 				}else
 				{
-					if(maxRowColNode->secondMaxValue>0.1*averLinkNum && contigInfoArr[maxRowColNode->contigID2-1].onlyEnd5==YES)
+					//if(maxRowColNode->secondMaxValue>0.1*averLinkNum && contigInfoArr[maxRowColNode->contigID2-1].onlyEnd5==YES)
+					if(maxRowColNode->secondMaxValue>0.1*averLinkNum && contigInfoArr[maxRowColNode->contigID2-1].shortFlag==YES)
 					{
-						if(changeMaxRowCol(maxRowColNode, contigLinkArr, headRowContigLinkArr, contigInfoArr, linkRound, YES)==FAILED)
-						{
-							printf("line=%d, In %s(), cannot change the first round to the second round, error!\n", __LINE__, __func__);
-							return FAILED;
-						}
-
 						linkRound ++;
 						break;
+					}else
+					{
+						returnCode = isLinkSingleton(maxRowColNode, contigGraphArr, linkRound);
+						if(returnCode==NO)
+						{
+							linkRound ++;
+							break;
+						}else if(returnCode==ERROR)
+						{
+							printf("line=%d, In %s(), cannot check link singleton, error!\n", __LINE__, __func__);
+							return FAILED;
+						}
 					}
 
 
@@ -1574,7 +1609,8 @@ short getFirstLinkedContigs(int *firstContigID, maxRowCol *pMaxRowColNode, conti
 	satisfiedFlag = NO;
 	while((*firstContigID) <= tmpContigsNum)
 	{
-		if(contigInfoArray[(*firstContigID)-1].used==0 && contigInfoArray[(*firstContigID)-1].onlyEnd5==NO)
+		//if(contigInfoArray[(*firstContigID)-1].used==0 && contigInfoArray[(*firstContigID)-1].onlyEnd5==NO)
+		if(contigInfoArray[(*firstContigID)-1].used==0 && contigInfoArray[(*firstContigID)-1].shortFlag==NO)
 		{ // the first contig is unused and not too short
 
 			pMaxRowColNode->maxRow = (*firstContigID) * 2 - 1;
@@ -1595,8 +1631,10 @@ short getFirstLinkedContigs(int *firstContigID, maxRowCol *pMaxRowColNode, conti
 				//if(maxValue>=minLinksNumContigsThres && (secondMaxValue/maxValue<maxRatioSecondFirstLinkNum && secondMaxValue<minLinksNumContigsThres*secondLinkNumFactor))
 				//if(pMaxRowColNode->maxValue>=minLinksNumContigsThres && ((double)pMaxRowColNode->secondMaxValue/pMaxRowColNode->maxValue<maxRatioSecondFirstLinkNum && pMaxRowColNode->secondMaxValue<minLinksNumContigsThres*secondLinkNumFactor))
 				if(pMaxRowColNode->maxValue>=minLinksNumContigsThres && ((double)pMaxRowColNode->secondMaxValue/pMaxRowColNode->maxValue<maxRatioSecondFirstLinkNum && pMaxRowColNode->secondMaxValue<maxSecondLinkNumThres))
+					if(pMaxRowColNode->maxValue>=minLinksNumContigsThres && ((double)pMaxRowColNode->secondMaxValue/pMaxRowColNode->maxValue<maxRatioSecondFirstLinkNum && pMaxRowColNode->secondMaxValue==0))
 				{
-					if(contigInfoArray[pMaxRowColNode->contigID2-1].onlyEnd5==NO)
+					//if(contigInfoArray[pMaxRowColNode->contigID2-1].onlyEnd5==NO)
+					if(contigInfoArray[pMaxRowColNode->contigID2-1].shortFlag==NO)
 					{
 						returnCode = isLinkSingleton(pMaxRowColNode, pContigGraphArray, FIRST_LINK_ROUND);
 						if(returnCode==YES)
@@ -1610,8 +1648,8 @@ short getFirstLinkedContigs(int *firstContigID, maxRowCol *pMaxRowColNode, conti
 						}
 					}else
 					{
-						satisfiedFlag = YES;
-						//satisfiedFlag = NO;
+						//satisfiedFlag = YES;
+						satisfiedFlag = NO;
 					}
 				}
 

@@ -156,8 +156,9 @@ typedef struct contigGraphNode
 typedef struct contigInfoNode
 {
 	uint32_t contigID;
-	uint32_t contigLen: 30;		// the length of contig
+	uint32_t contigLen: 29;		// the length of contig
 	uint32_t onlyEnd5: 1;		// whether only 5' end because of short length (<=300 bp):  YES (1); NO (0).
+	uint32_t shortFlag: 1;		// short means : len < 2 * alignRegLen
 	uint32_t used: 1;			// the contig is used: 0-- unused, 1-- used.
 	uint32_t usedTimeEnd5;			// the used time of 5' end
 	uint32_t usedTimeEnd3;			// the used time of 3' end
