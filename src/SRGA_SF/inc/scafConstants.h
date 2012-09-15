@@ -80,14 +80,15 @@
 #define GAP_SCORE			-1
 
 //======================= gap filling =======================
-#define TABLE_SIZE_SCAFASSEMBLINGREAD			1000000
-#define TABLE_SIZE_SUCCESSFUL_READ_ARRAY_SCAF	100000
+#define TABLE_SIZE_SCAFASSEMBLINGREAD			10000
+#define TABLE_SIZE_SUCCESSFUL_READ_ARRAY_SCAF	10000
+#define MAX_DECISION_TABLE_SIZE_HTRES			10000
 
 //#define ERROR_REGION_LEN_3End					2	//erroneous region length of 3' end of a read
 //#define ERROR_REGION_LEN_3End					3
 #define ERROR_REGION_LEN_3End_FACTOR			0.1f
 
-#define MIN_OVERLAP_LEN							11
+#define MIN_OVERLAP_LEN							7
 
 // 3 statuses of a read in decision table
 #define ASSEMBLING_STATUS						1	// assembling
@@ -114,8 +115,10 @@
 #define LONG_KMER_OCC_FACTOR			1.5f
 #define MIN_LONG_KMER_OCC_THRES			6
 
-#define OCCS_NUM_SE_FAILED_PE_FACTOR			5.0f
-#define MAX_OCC_NUM_FAILED_PE_THRES				60.0f
+//#define OCCS_NUM_SE_FAILED_PE_FACTOR			5.0f
+#define OCCS_NUM_SE_FAILED_PE_FACTOR			6.0f
+//#define MAX_OCC_NUM_FAILED_PE_THRES				60.0f
+#define MAX_OCC_NUM_FAILED_PE_THRES				100.0f
 
 #define MAX_NAVI_NUM_SE_THRES					2  // === not used ===
 

@@ -610,17 +610,24 @@ short getNextKmerByMix(int contigNodesNum, int assemblyRound)
 	if(kmers[0] || kmers[1])
 	{
 		if((readsNumRatio<0.2 || readsNumRatio>3) && (successContig!=NULL && contigIndex-successContig->index >= 15))
+		{
 			kmers[0] = kmers[1] = NULL;
-		else if((maxOccPE>0 && maxOccPE<=minKmerOccPE) && (readsNumRatio<0.3 || readsNumRatio>3))
+		}else if((maxOccPE>0 && maxOccPE<=minKmerOccPE) && (readsNumRatio<0.3 || readsNumRatio>3))
+		{
 			kmers[0] = kmers[1] = NULL;
-		else if(readsNumRatio>2.5 && (successContig!=NULL && contigIndex-successContig->index >= 20))
+		}else if(readsNumRatio>2.5 && (successContig!=NULL && contigIndex-successContig->index >= 20))
+		{
 			kmers[0] = kmers[1] = NULL;
-		else if(readsNumRatio>6 && (maxOccPE>maxOccNumFaiedPE && secondOccPE/maxOccPE>0.2))
+		}else if(readsNumRatio>6 && (maxOccPE>maxOccNumFaiedPE && secondOccPE/maxOccPE>0.2))
+		{
 			kmers[0] = kmers[1] = NULL;
-		else if(readsNumRatio>5)
+		}else if(readsNumRatio>5)
+		{
 			kmers[0] = kmers[1] = NULL;
-		else if(maxOccPE==1 && readsNumRatio < 0.7)
+		}else if(maxOccPE==1 && readsNumRatio < 0.7)
+		{
 			kmers[0] = kmers[1] = NULL;
+		}
 //		else if(readsNumRatio < 0.6 && (successContig!=NULL &&  contigIndex-successContig->index >= 13))
 //		{
 //			kmers[0] = kmers[1] = NULL;

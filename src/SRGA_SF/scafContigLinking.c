@@ -1027,7 +1027,7 @@ short linkContigs(const char *linkResultFile)
 		//############################ Debug information ######################
 #if DEBUG_FLAG
 		printf("============ Begin linking scaffolds: %d ============\n", linkID);
-		if(linkID==10)
+		if(linkID==2)
 		{
 			printf("$$$$$$$$$$$$$$$$$$$$$ linkID=%d!\n", linkID);
 		}
@@ -1631,7 +1631,7 @@ short getFirstLinkedContigs(int *firstContigID, maxRowCol *pMaxRowColNode, conti
 				//if(maxValue>=minLinksNumContigsThres && (secondMaxValue/maxValue<maxRatioSecondFirstLinkNum && secondMaxValue<minLinksNumContigsThres*secondLinkNumFactor))
 				//if(pMaxRowColNode->maxValue>=minLinksNumContigsThres && ((double)pMaxRowColNode->secondMaxValue/pMaxRowColNode->maxValue<maxRatioSecondFirstLinkNum && pMaxRowColNode->secondMaxValue<minLinksNumContigsThres*secondLinkNumFactor))
 				if(pMaxRowColNode->maxValue>=minLinksNumContigsThres && ((double)pMaxRowColNode->secondMaxValue/pMaxRowColNode->maxValue<maxRatioSecondFirstLinkNum && pMaxRowColNode->secondMaxValue<maxSecondLinkNumThres))
-					if(pMaxRowColNode->maxValue>=minLinksNumContigsThres && ((double)pMaxRowColNode->secondMaxValue/pMaxRowColNode->maxValue<maxRatioSecondFirstLinkNum && pMaxRowColNode->secondMaxValue==0))
+				//if(pMaxRowColNode->maxValue>=minLinksNumContigsThres && ((double)pMaxRowColNode->secondMaxValue/pMaxRowColNode->maxValue<maxRatioSecondFirstLinkNum && pMaxRowColNode->secondMaxValue==0))
 				{
 					//if(contigInfoArray[pMaxRowColNode->contigID2-1].onlyEnd5==NO)
 					if(contigInfoArray[pMaxRowColNode->contigID2-1].shortFlag==NO)

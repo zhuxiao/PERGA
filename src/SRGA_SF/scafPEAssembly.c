@@ -20,6 +20,12 @@ short getNextKmerByMixInScaf(int contigNodesNum, int contigID, int contigLen, in
 	scafKmer *tmp_kmers[2]/*, *tmp_kmersPE[2], *tmp_kmersSE[2]*/;
 	int i, maxOccPE, maxOccSE, maxOccIndexPE, maxOccIndexSE;
 
+	if(scafAssemblingReadsNum>MAX_DECISION_TABLE_SIZE_HTRES)
+	{
+		scafKmers[0] = scafKmers[1] = NULL;
+		return SUCCESSFUL;
+	}
+
 	tmp_kmers[0] = scafKmers[0];
 	tmp_kmers[1] = scafKmers[1];
 	if(memcpy(tmpKmerSeqIntAssembly, kmerSeqIntAssembly, entriesPerKmer*sizeof(uint64_t))==NULL)
@@ -182,6 +188,12 @@ short getNextKmerByPEInScaf(int contigNodesNum, int contigID, int contigLen, int
 	double maxOcc = 0, secondOcc = 0;
 	int maxOccIndex = -1, secondOccIndex = -1;
 	kmer_len = 0;
+
+	if(scafAssemblingReadsNum>MAX_DECISION_TABLE_SIZE_HTRES)
+	{
+		scafKmers[0] = scafKmers[1] = NULL;
+		return SUCCESSFUL;
+	}
 
 	//将8个正反向kmer添加进临时数组tmp_kmers
 	for(i=0; i<4; i++)

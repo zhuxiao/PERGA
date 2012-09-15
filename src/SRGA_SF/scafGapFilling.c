@@ -1526,6 +1526,12 @@ short getNextKmerBySEInScaf(int contigNodesNum, int contigID, int contigLen, int
 	int maxOccIndex = -1, secondOccIndex = -1;
 	kmer_len = 0;
 
+	if(scafAssemblingReadsNum>MAX_DECISION_TABLE_SIZE_HTRES)
+	{
+		scafKmers[0] = scafKmers[1] = NULL;
+		return SUCCESSFUL;
+	}
+
 	//将8个正反向kmer添加进临时数组tmp_kmers
 	for(i=0; i<4; i++)
 	{

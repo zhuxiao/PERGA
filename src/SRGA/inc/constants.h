@@ -8,8 +8,8 @@
 #define __USE_LARGEFILE64
 //#define _FILE_OFFSET_BITS 64
 
-#define VERSION_STR						("v0.3.05.02")
-#define RELEASE_DATE_STR				("Sep 5, 2012")
+#define VERSION_STR						("v0.3.05.03")
+#define RELEASE_DATE_STR				("Sep 7, 2012")
 
 #ifndef NULL
 #define NULL ((void *)0)
@@ -31,9 +31,9 @@
 
 #define HASH_TABLE_SIZE					(157286611LLU)
 
-#define TABLE_SIZE_ASSEMBLINGREAD		50000
-#define TABLE_SIZE_RIDPOSORIENTATION 	50000
-#define MAX_DECISION_TABLE_SIZE_HTRES	50000
+#define TABLE_SIZE_ASSEMBLINGREAD		10000
+#define TABLE_SIZE_RIDPOSORIENTATION 	10000
+#define MAX_DECISION_TABLE_SIZE_HTRES	10000
 
 #define FIRST_ROUND_ASSEMBLY			1		// the first assembly round
 #define SECOND_ROUND_ASSEMBLY			2		// the second assembly round
