@@ -33,13 +33,14 @@ int readLenCutOff;					// the read length after cutting at the 3' end of reads
 int pairedMode;
 double meanSizeInsert, standardDev;
 int minContigLen;
+int trimReadLenFlag;
 
 
 //*********************** graph.c **************************
 graphtype *deBruijnGraph;
 
-uint64_t newKmerNum;
-uint64_t newRidposNum;
+uint64_t totalKmerNum;
+uint64_t totalRidposNum;
 
 uint64_t totalReadNum, validReadNum;  //reads总数, 有效reads总数
 double timeuse_deBruijn;
@@ -51,7 +52,10 @@ int occsNumSE[4], occsNumPE[4];  //下一个kmer的得分，对应ACGT的顺序
 int maxOccIndexSE, maxOccIndexPE, secondOccIndexSE, secondOccIndexPE;
 double maxOccSE, maxOccPE, secondOccSE, secondOccPE;
 
-int readLenInFile;					// the read length in the data file
+//int readLenInFile;					// the read length in the data file
+int maxReadLenInFile;				// the maximal length of read length in file
+int minReadLenInFile;				// the minimal length of read length in file
+int averReadLenInFile;				// the average length of read length in file
 //int readLenCutOff;					// the read length after cutting at the 3' end of reads
 
 int qualityBaseNumEnd3;				// checked base number at 3' end of reads
@@ -85,9 +89,11 @@ double lowOccThresNaviOccQueue;
 FILE *fpContigsBase, *fpContigsHanging;
 int hangingContigOutFlag;		// whether output the hanging contig file: YES / NO (default)
 
+short assemblyCycle;	// values: 1 for 0.5x <= firstKmerThres <= 15x, 2 for firstKmerThres > 15x, 3 for 2 <= firstKmerThres < 0.5x
 short assemblyRound; //FRIST_ROUND_ASSEMBLY  or SECOND_ROUND_ASSEMBLY
 kmertype *kmers[2]; //kmers[0]存放正向的kmer, kmers[1]存放反向互补的kmer
 int kmer_len;
+double lowerBoundFirstKmer, upperBoundFirstKmer;
 
 assemblingreadtype *decisionTable;	// the decision table
 int itemNumDecisionTable;			// item number in decision table

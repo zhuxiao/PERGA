@@ -35,13 +35,32 @@ short startSRGA(int operationModePara, int kmerSizePara, int readLenCutOffPara, 
 
 	if(operationMode!=1)
 	{
-		if(buildContigs(contigsFileFasta, graphFile)==FAILED)
+		if(operationMode==2)
+		{
+			// load the graph to memory
+			if(loadGraph(&deBruijnGraph, graphFile)==FAILED)
+			{
+				printf("line=%d, In %s(), cannot load graph to memory, error!\n", __LINE__, __func__);
+				return FAILED;
+			}
+
+			// ############################ Debug information ##############################
+			//if(checkGraph(deBruijnGraph)==FAILED)
+			//{
+			//	printf("line=%d, In %s(), checking graph error!\n", __LINE__, __func__);
+			//	return FAILED;
+			//}
+			// ############################ Debug information ##############################
+		}
+
+		if(buildContigs(contigsFileFasta)==FAILED)
 		{ //构建contigs
 			printf("line=%d, In %s(), cannot build contigs, error!\n", __LINE__, __func__);
 			return ERROR;
 		}
 	}
 
+	releaseGraph(deBruijnGraph);  //free graph
 
 	freeGlobalParas();
 
@@ -114,28 +133,29 @@ short initGlobalParas(int operationModePara, char *outputPathName, char *prefix,
 			return FAILED;
 		}
 
-		// get the readlenInFile from fastq file
+
+		// get the read length from fastq file
 		if(readsFileFormatType==FILE_FORMAT_FASTA)
 		{
-			if(getMinReadLenFromFastaFiles(&readLenInFile, readFilesInput, readFileNum)==FAILED)
+			if(getReadLenAndCountFromFilesFasta(&totalReadNum, &averReadLenInFile, &maxReadLenInFile, &minReadLenInFile, readFilesInput, readFileNum)==FAILED)
 			{
-				//printf("line=%d, In %s(), cannot get readlenInFile, error!\n", __LINE__, __func__);
+				//printf("line=%d, In %s(), cannot get read length and count, error!\n", __LINE__, __func__);
 				return FAILED;
 			}
 		}else if(readsFileFormatType==FILE_FORMAT_FASTQ)
 		{
-			if(getMinReadLenFromFastqFiles(&readLenInFile, readFilesInput, readFileNum)==FAILED)
+			if(getReadLenAndCountFromFilesFastq(&totalReadNum, &averReadLenInFile, &maxReadLenInFile, &minReadLenInFile, readFilesInput, readFileNum)==FAILED)
 			{
-				//printf("line=%d, In %s(), cannot get readlenInFile, error!\n", __LINE__, __func__);
+				//printf("line=%d, In %s(), cannot get read length and count, error!\n", __LINE__, __func__);
 				return FAILED;
 			}
 		}
 
 		readLenCutOff = readLenCut;
 		if(readLenCutOff==0)
-			readLen = readLenInFile;
-		else if(readLenCutOff>readLenInFile)
-			readLen = readLenInFile;
+			readLen = averReadLenInFile;
+		else if(readLenCutOff>averReadLenInFile)
+			readLen = averReadLenInFile;
 		else
 			readLen = readLenCutOff;
 
@@ -191,6 +211,7 @@ short initGlobalParas(int operationModePara, char *outputPathName, char *prefix,
 		return FAILED;
 	}
 
+	trimReadLenFlag = TRIM_READ_LEN_FLAG;
 	qualityBaseNumEnd3 = ceil(readLen * QUAL_BASE_NUM_3End_FACTOR);
 	qualityBaseNumEnd5 = readLen - qualityBaseNumEnd3;
 	errorRegLenEnd3 = ceil(readLen * ERROR_REGION_LEN_3End_FACTOR);
@@ -264,6 +285,7 @@ short initGlobalParas(int operationModePara, char *outputPathName, char *prefix,
 		strcat(graphFile, ".bin");
 	}
 
+#if (DEBUG_PARA_PRINT==YES)
 //	printf("outputPathStr=%s\n", outputPathStr);
 //	printf("contigsFileFasta=%s\n", contigsFileFasta);
 //	printf("contigsFileHanging=%s\n", contigsFileHanging);
@@ -271,6 +293,7 @@ short initGlobalParas(int operationModePara, char *outputPathName, char *prefix,
 //	printf("graphFile=%s\n", graphFile);
 //	printf("sampleContigsFile=%s\n", sampleContigsFile);
 //
+	printf("trimReadLenFlag=%d\n", trimReadLenFlag);
 	printf("qualityBaseNumEnd3=%d\n", qualityBaseNumEnd3);
 	printf("qualityBaseNumEnd5=%d\n", qualityBaseNumEnd5);
 	printf("errorRegLenEnd3=%d\n", errorRegLenEnd3);
@@ -278,7 +301,7 @@ short initGlobalParas(int operationModePara, char *outputPathName, char *prefix,
 //	printf("AVERAGE_QUAL_THRESHOLD_5End=%.4f\n", AVERAGE_QUAL_THRESHOLD_5End);
 //	printf("SINGLE_QUAL_THRESHOLD=%d\n", SINGLE_QUAL_THRESHOLD);
 //	printf("ARTIFACTS_BASE_A_THRESHOLD=%.4f\n", ARTIFACTS_BASE_A_THRESHOLD);
-
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -400,7 +423,7 @@ short initGlobalParas(int operationModePara, char *outputPathName, char *prefix,
 			printf("insert size sdev.  : %.2f\n", standardDev);
 		}
 		printf("output directory   : %s\n", outputPathStr);
-		printf("graph file         : %s\n", graphFile);
+		printf("hash table file    : %s\n", graphFile);
 		printf("contig file        : %s\n", contigsFileFasta);
 		printf("minimal contig size: %d\n\n", minContigLen);
 	}else if(operationMode==1)
@@ -413,10 +436,10 @@ short initGlobalParas(int operationModePara, char *outputPathName, char *prefix,
 		printf("read files[%d]      : %s\n", i, readFilesInput[i]);
 		printf("single qual thres  : %d\n", singleBaseQualThres);
 		printf("output directory   : %s\n", outputPathStr);
-		printf("graph file         : %s\n", graphFile);
+		printf("hash table file    : %s\n", graphFile);
 	}else if(operationMode==2)
 	{
-		printf("\ngraph file         : %s\n", graphFile);
+		printf("\nhash table file    : %s\n", graphFile);
 		printf("kmer size          : %d\n", kmerSize);
 		//printf("read length cutoff : %d\n", readLenCutOff);
 		printf("read length        : %d\n", readLen);
@@ -563,6 +586,221 @@ short getReadsFileFormat(int *readsFileFormatType, char **readFilesInput, int re
 		printf("Reads files must be in fasta or fastq format, error!\n");
 		return FAILED;
 	}
+
+	return SUCCESSFUL;
+}
+
+/**
+ * Get the read length and total count from fastq files.
+ *  @return:
+ *  	If succeeds, return SUCCESSFUL; otherwise, return FAILED.
+ */
+short getReadLenAndCountFromFilesFasta(uint64_t *tmpTotalReadNum, int *tmpAverReadLenInFile, int *tmpMaxReadLenInFile, int *tmpMinReadLenInFile, char **readsFileNames, int readsFileNum)
+{
+	int64_t i, tmpReadCount, sumReadLen, tmpSumReadLen, tmpMaxReadLen, tmpMinReadLen;
+
+	(*tmpTotalReadNum) = 0;
+	sumReadLen = 0;
+	(*tmpMaxReadLenInFile) = 0;
+	(*tmpMinReadLenInFile) = INT_MAX;
+
+	for(i=0; i<readFileNum; i++)
+	{
+		if(getReadLenAndCountFromSingleFasta(&tmpReadCount, &tmpSumReadLen, &tmpMaxReadLen, &tmpMinReadLen, readsFileNames[i])==FAILED)
+		{
+			//printf("line=%d, In %s(), cannot get readlenInFile, error!\n", __LINE__, __func__);
+			return FAILED;
+		}
+		(*tmpTotalReadNum) += tmpReadCount;
+		sumReadLen += tmpSumReadLen;
+
+		if(tmpMaxReadLen>(*tmpMaxReadLenInFile)) (*tmpMaxReadLenInFile) = tmpMaxReadLen;
+		if(tmpMinReadLen<(*tmpMinReadLenInFile)) (*tmpMinReadLenInFile) = tmpMinReadLen;
+	}
+
+	if((*tmpTotalReadNum)>0)
+		(*tmpAverReadLenInFile) = sumReadLen / (*tmpTotalReadNum);
+	else
+	{
+		*tmpAverReadLenInFile = 0;
+		return FAILED;
+	}
+
+#if (DEBUG_PARA_PRINT==YES)
+	printf("Total reads: %lu\n", (*tmpTotalReadNum));
+	printf("averReadLen: %d\n", (*tmpAverReadLenInFile));
+	printf("maxReadLen: %d\n", (*tmpMaxReadLenInFile));
+	printf("minReadLen: %d\n", (*tmpMinReadLenInFile));
+#endif
+
+	return SUCCESSFUL;
+}
+
+/**
+ * Get the read length and total count from fastq files.
+ *  @return:
+ *  	If succeeds, return SUCCESSFUL; otherwise, return FAILED.
+ */
+short getReadLenAndCountFromFilesFastq(uint64_t *tmpTotalReadNum, int *tmpAverReadLenInFile, int *tmpMaxReadLenInFile, int *tmpMinReadLenInFile, char **readsFileNames, int readsFileNum)
+{
+	int64_t i, tmpReadCount, sumReadLen, tmpSumReadLen, tmpMaxReadLen, tmpMinReadLen;
+
+	(*tmpTotalReadNum) = 0;
+	sumReadLen = 0;
+	(*tmpMaxReadLenInFile) = 0;
+	(*tmpMinReadLenInFile) = INT_MAX;
+
+	for(i=0; i<readFileNum; i++)
+	{
+		if(getReadLenAndCountFromSingleFastq(&tmpReadCount, &tmpSumReadLen, &tmpMaxReadLen, &tmpMinReadLen, readsFileNames[i])==FAILED)
+		{
+			//printf("line=%d, In %s(), cannot get readlenInFile, error!\n", __LINE__, __func__);
+			return FAILED;
+		}
+		(*tmpTotalReadNum) += tmpReadCount;
+		sumReadLen += tmpSumReadLen;
+
+		if(tmpMaxReadLen>(*tmpMaxReadLenInFile)) (*tmpMaxReadLenInFile) = tmpMaxReadLen;
+		if(tmpMinReadLen<(*tmpMinReadLenInFile)) (*tmpMinReadLenInFile) = tmpMinReadLen;
+	}
+
+	if((*tmpTotalReadNum)>0)
+		(*tmpAverReadLenInFile) = sumReadLen / (*tmpTotalReadNum);
+	else
+	{
+		*tmpAverReadLenInFile = 0;
+		return FAILED;
+	}
+
+#if (DEBUG_PARA_PRINT==YES)
+	printf("Total reads: %lu\n", (*tmpTotalReadNum));
+	printf("averReadLen: %d\n", (*tmpAverReadLenInFile));
+	printf("maxReadLen: %d\n", (*tmpMaxReadLenInFile));
+	printf("minReadLen: %d\n", (*tmpMinReadLenInFile));
+#endif
+
+	return SUCCESSFUL;
+}
+
+/**
+ * Get the read length and total count from single fasta file.
+ *  @return:
+ *  	If succeeds, return SUCCESSFUL; otherwise, return FAILED.
+ */
+short getReadLenAndCountFromSingleFasta(int64_t *tmpReadCount, int64_t *tmpSumReadLen, int64_t *tmpMaxReadLen, int64_t *tmpMinReadLen, char *fastaFile)
+{
+	FILE *fpFasta;
+	char ch;
+	int tmpLen;
+
+	fpFasta = fopen(fastaFile, "r");
+	if(fpFasta==NULL)
+	{
+		printf("line=%d, In %s(), cannot open file [ %s ], error!\n", __LINE__, __func__, fastaFile);
+		return FAILED;
+	}
+
+	*tmpReadCount = 0;
+	*tmpSumReadLen = 0;
+	*tmpMaxReadLen = 0;
+	*tmpMinReadLen = INT_MAX;
+
+	//ch = fgetc(fpFasta);
+	while(!feof(fpFasta))
+	{
+		while(ch!='\n') ch = fgetc(fpFasta);
+
+		tmpLen = 0;
+		ch = fgetc(fpFasta);
+		while(ch!='>' && ch!=-1)
+		{
+			if(ch!='\n')
+				tmpLen ++;
+			ch = fgetc(fpFasta);
+		}
+
+		(*tmpReadCount) ++;
+		(*tmpSumReadLen) += tmpLen;
+
+		if(tmpLen>(*tmpMaxReadLen)) *tmpMaxReadLen = tmpLen;
+		if(tmpLen<(*tmpMinReadLen)) *tmpMinReadLen = tmpLen;
+	}
+
+	fclose(fpFasta);
+	fpFasta = NULL;
+
+	return SUCCESSFUL;
+}
+
+/**
+ * Get the read length and total count from single fastq file.
+ *  @return:
+ *  	If succeeds, return SUCCESSFUL; otherwise, return FAILED.
+ */
+short getReadLenAndCountFromSingleFastq(int64_t *tmpReadCount, int64_t *tmpSumReadLen, int64_t *tmpMaxReadLen, int64_t *tmpMinReadLen, char *fastqFile)
+{
+	FILE *fpFastq;
+	int line_index, tmpLen;
+	char ch;
+
+	fpFastq = fopen(fastqFile, "r");
+	if(fpFastq==NULL)
+	{
+		printf("line=%d, In %s(), cannot open file [ %s ], error!\n", __LINE__, __func__, fastqFile);
+		return FAILED;
+	}
+
+	*tmpReadCount = 0;
+	*tmpSumReadLen = 0;
+	*tmpMaxReadLen = 0;
+	*tmpMinReadLen = INT_MAX;
+
+	line_index = 0;
+	ch = fgetc(fpFastq);
+	while(!feof(fpFastq))
+	{
+		if(line_index==0)  //the sequence name line
+		{
+			ch = fgetc(fpFastq);
+			while(ch!='\n' && ch!=-1)
+				ch = fgetc(fpFastq);
+		}else if(line_index==1)  //the sequence line
+		{
+			tmpLen = 0;
+			ch = fgetc(fpFastq);
+			while(ch!='\n' && ch!=-1)
+			{
+				tmpLen ++;
+				ch = fgetc(fpFastq);
+			}
+		}else if(line_index==2)  //the sequence name line
+		{
+			ch = fgetc(fpFastq);
+			while(ch!='\n' && ch!=-1)
+				ch = fgetc(fpFastq);
+		}else
+		{
+			ch = fgetc(fpFastq);
+			while(ch!='\n' && ch!=-1)
+				ch = fgetc(fpFastq);
+		}
+		line_index++;
+
+		if(line_index==4)  //the sequence is read finished, construct the read
+		{
+			(*tmpReadCount) ++;
+
+			(*tmpSumReadLen) += tmpLen;
+
+			if(tmpLen>(*tmpMaxReadLen)) *tmpMaxReadLen = tmpLen;
+			if(tmpLen<(*tmpMinReadLen)) *tmpMinReadLen = tmpLen;
+
+			line_index = 0;
+		}
+	}
+
+	fclose(fpFastq);
+	fpFastq = NULL;
 
 	return SUCCESSFUL;
 }

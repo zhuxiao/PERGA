@@ -16,7 +16,7 @@
  */
 short constructGraph(char *graphFileName, char **readsFileNames, int readsFileNum)
 {
-	printf("\n============= Begin to construct graph, please wait ... =============\n");
+	printf("\n============= Begin to construct k-mer hash table, please wait ... =============\n");
 
 	if(readsFileFormatType==FILE_FORMAT_FASTA)
 	{
@@ -80,7 +80,7 @@ short constructGraph(char *graphFileName, char **readsFileNames, int readsFileNu
 		return FAILED;
 	}
 
-	printf("============= End constructed graph. =============\n");
+	printf("============= End constructed k-mer hash table. =============\n");
 
 	return SUCCESSFUL;
 }
@@ -95,24 +95,24 @@ short constructGraphBySEFasta(char *graphFile, char **readsFileNames, int readsF
 	struct timeval tpstart,tpend;
 	gettimeofday(&tpstart,NULL);
 
-	newKmerNum = 0;
-	newRidposNum = 0;
+	totalKmerNum = 0;
+	totalRidposNum = 0;
 
 	//统计kmer的数量
-	graphtype *graph = ReadDataFilePreBySEFasta(readsFileNames, readsFileNum);
-	if(graph)
+	deBruijnGraph = ReadDataFilePreBySEFasta(readsFileNames, readsFileNum);
+	if(deBruijnGraph)
 	{
 		//fill kmers
-		graph = ReadDataFileBySEFasta(readsFileNames, readsFileNum, graph);
-		if(graph==NULL)
+		deBruijnGraph = ReadDataFileBySEFasta(readsFileNames, readsFileNum, deBruijnGraph);
+		if(deBruijnGraph==NULL)
 		{
-			printf("line=%d, In %s(), cannot construct the graph, error!\n", __LINE__, __func__);
+			printf("line=%d, In %s(), cannot construct the k-mer hash table, error!\n", __LINE__, __func__);
 			return FAILED;
 		}
 
 /*
 		// ############################ Debug information ##############################
-		if(checkGraph(graph)==FAILED)
+		if(checkGraph(deBruijnGraph)==FAILED)
 		{
 			printf("line=%d, In %s(), checking graph error!\n", __LINE__, __func__);
 			return FAILED;
@@ -121,7 +121,7 @@ short constructGraphBySEFasta(char *graphFile, char **readsFileNames, int readsF
 */
 
 		// output the graph to file
-		if(outputGraphToFile(graphFile, graph)==FAILED)
+		if(outputGraphToFile(graphFile, deBruijnGraph)==FAILED)
 		{
 			printf("line=%d, In %s(), can not output graph to file. Error!\n", __LINE__, __func__);
 			return FAILED;
@@ -132,10 +132,8 @@ short constructGraphBySEFasta(char *graphFile, char **readsFileNames, int readsF
 		return FAILED;
 	}
 
-	releaseGraph(graph);  //释放de Bruijn图的内存
-
 	printf("totalReadNum=%lu, validReadNum=%lu, validRatio=%.4f\n", totalReadNum, validReadNum, (double)validReadNum/totalReadNum);
-	printf("newKmerNum=%ld, newRidposNum=%ld, folds=%f, nonempty=%f\n", newKmerNum, newRidposNum, (newKmerNum>0)?(double)newRidposNum/newKmerNum:0, (double)newKmerNum/hashTableSize);
+	printf("totalKmerNum=%lu, totalRidposNum=%lu, folds=%f\n", totalKmerNum, totalRidposNum, (totalKmerNum>0)?(double)totalRidposNum/totalKmerNum:0);
 
 	gettimeofday(&tpend, NULL);
 	timeuse_deBruijn = tpend.tv_sec-tpstart.tv_sec+ (double)(tpend.tv_usec-tpstart.tv_usec)/1000000;
@@ -155,24 +153,24 @@ short constructGraphBySEFastq(char *graphFile, char **readsFileNames, int readsF
 	struct timeval tpstart,tpend;
 	gettimeofday(&tpstart,NULL);
 
-	newKmerNum = 0;
-	newRidposNum = 0;
+	totalKmerNum = 0;
+	totalRidposNum = 0;
 
 	//统计kmer的数量
-	graphtype *graph = ReadDataFilePreBySEFastq(readsFileNames, readsFileNum);
-	if(graph)
+	deBruijnGraph = ReadDataFilePreBySEFastq(readsFileNames, readsFileNum);
+	if(deBruijnGraph)
 	{
 		//填充kmer
-		graph = ReadDataFileBySEFastq(readsFileNames, readsFileNum, graph);
-		if(graph==NULL)
+		deBruijnGraph = ReadDataFileBySEFastq(readsFileNames, readsFileNum, deBruijnGraph);
+		if(deBruijnGraph==NULL)
 		{
-			printf("line=%d, In %s(), cannot construct the graph, error!\n", __LINE__, __func__);
+			printf("line=%d, In %s(), cannot construct the k-mer hash table, error!\n", __LINE__, __func__);
 			return FAILED;
 		}
 
 /*
 		// ############################ Debug information ##############################
-		if(checkGraph(graph)==FAILED)
+		if(checkGraph(deBruijnGraph)==FAILED)
 		{
 			printf("line=%d, In %s(), checking graph error!\n", __LINE__, __func__);
 			return FAILED;
@@ -181,7 +179,7 @@ short constructGraphBySEFastq(char *graphFile, char **readsFileNames, int readsF
 */
 
 		// output the graph to file
-		if(outputGraphToFile(graphFile, graph)==FAILED)
+		if(outputGraphToFile(graphFile, deBruijnGraph)==FAILED)
 		{
 			printf("line=%d, In %s(), can not output graph to file. Error!\n", __LINE__, __func__);
 			return FAILED;
@@ -192,10 +190,8 @@ short constructGraphBySEFastq(char *graphFile, char **readsFileNames, int readsF
 		return FAILED;
 	}
 
-	releaseGraph(graph);  //释放de Bruijn图的内存
-
 	printf("totalReadNum=%lu, validReadNum=%lu, validRatio=%.4f\n", totalReadNum, validReadNum, (double)validReadNum/totalReadNum);
-	printf("newKmerNum=%ld, newRidposNum=%ld, folds=%f, nonempty=%f\n", newKmerNum, newRidposNum, (newKmerNum>0)?(double)newRidposNum/newKmerNum:0, (double)newKmerNum/hashTableSize);
+	printf("totalKmerNum=%ld, totalRidposNum=%ld, folds=%f\n", totalKmerNum, totalRidposNum, (totalKmerNum>0)?(double)totalRidposNum/totalKmerNum:0);
 
 	gettimeofday(&tpend, NULL);
 	timeuse_deBruijn = tpend.tv_sec-tpstart.tv_sec+ (double)(tpend.tv_usec-tpstart.tv_usec)/1000000;
@@ -215,24 +211,24 @@ short constructGraphByPEFastaSeparate(char *graphFile, char **readsFileNames, in
 	struct timeval tpstart,tpend;
 	gettimeofday(&tpstart,NULL);
 
-	newKmerNum = 0;
-	newRidposNum = 0;
+	totalKmerNum = 0;
+	totalRidposNum = 0;
 
 	//统计kmer的数量
-	graphtype *graph = ReadDataFilePreByPEFastaSeparate(readsFileNames, readsFileNum);
-	if(graph)
+	deBruijnGraph = ReadDataFilePreByPEFastaSeparate(readsFileNames, readsFileNum);
+	if(deBruijnGraph)
 	{
 		//填充kmer
-		graph = ReadDataFileByPEFastaSeparate(readsFileNames, readsFileNum, graph);
-		if(graph==NULL)
+		deBruijnGraph = ReadDataFileByPEFastaSeparate(readsFileNames, readsFileNum, deBruijnGraph);
+		if(deBruijnGraph==NULL)
 		{
-			printf("line=%d, In %s(), cannot construct the graph, error!\n", __LINE__, __func__);
+			printf("line=%d, In %s(), cannot construct the k-mer hash table, error!\n", __LINE__, __func__);
 			return FAILED;
 		}
 
 /*
 		// ############################ Debug information ##############################
-		if(checkGraph(graph)==FAILED)
+		if(checkGraph(deBruijnGraph)==FAILED)
 		{
 			printf("line=%d, In %s(), checking graph error!\n", __LINE__, __func__);
 			return FAILED;
@@ -241,7 +237,7 @@ short constructGraphByPEFastaSeparate(char *graphFile, char **readsFileNames, in
 */
 
 		// output the graph to file
-		if(outputGraphToFile(graphFile, graph)==FAILED)
+		if(outputGraphToFile(graphFile, deBruijnGraph)==FAILED)
 		{
 			printf("line=%d, In %s(), can not output graph to file. Error!\n", __LINE__, __func__);
 			return FAILED;
@@ -252,10 +248,8 @@ short constructGraphByPEFastaSeparate(char *graphFile, char **readsFileNames, in
 		return FAILED;
 	}
 
-	releaseGraph(graph);  //释放de Bruijn图的内存
-
 	printf("totalReadNum=%lu, validReadNum=%lu, validRatio=%.4f\n", totalReadNum, validReadNum, (double)validReadNum/totalReadNum);
-	printf("newKmerNum=%ld, newRidposNum=%ld, folds=%f, nonempty=%f\n", newKmerNum, newRidposNum, (newKmerNum>0)?(double)newRidposNum/newKmerNum:0, (double)newKmerNum/hashTableSize);
+	printf("totalKmerNum=%ld, totalRidposNum=%ld, folds=%f\n", totalKmerNum, totalRidposNum, (totalKmerNum>0)?(double)totalRidposNum/totalKmerNum:0);
 
 	gettimeofday(&tpend, NULL);
 	timeuse_deBruijn = tpend.tv_sec-tpstart.tv_sec+ (double)(tpend.tv_usec-tpstart.tv_usec)/1000000;
@@ -275,24 +269,24 @@ short constructGraphByPEFastqSeparate(char *graphFile, char **readsFileNames, in
 	struct timeval tpstart,tpend;
 	gettimeofday(&tpstart,NULL);
 
-	newKmerNum = 0;
-	newRidposNum = 0;
+	totalKmerNum = 0;
+	totalRidposNum = 0;
 
 	//统计kmer的数量
-	graphtype *graph = ReadDataFilePreByPEFastqSeparate(readsFileNames, readsFileNum);
-	if(graph)
+	deBruijnGraph = ReadDataFilePreByPEFastqSeparate(readsFileNames, readsFileNum);
+	if(deBruijnGraph)
 	{
 		//填充kmer
-		graph = ReadDataFileByPEFastqSeparate(readsFileNames, readsFileNum, graph);
-		if(graph==NULL)
+		deBruijnGraph = ReadDataFileByPEFastqSeparate(readsFileNames, readsFileNum, deBruijnGraph);
+		if(deBruijnGraph==NULL)
 		{
-			printf("line=%d, In %s(), cannot construct the graph, error!\n", __LINE__, __func__);
+			printf("line=%d, In %s(), cannot construct the k-mer hash table, error!\n", __LINE__, __func__);
 			return FAILED;
 		}
 
 /*
 		// ############################ Debug information ##############################
-		if(checkGraph(graph)==FAILED)
+		if(checkGraph(deBruijnGraph)==FAILED)
 		{
 			printf("line=%d, In %s(), checking graph error!\n", __LINE__, __func__);
 			return FAILED;
@@ -301,7 +295,7 @@ short constructGraphByPEFastqSeparate(char *graphFile, char **readsFileNames, in
 */
 
 		// output the graph to file
-		if(outputGraphToFile(graphFile, graph)==FAILED)
+		if(outputGraphToFile(graphFile, deBruijnGraph)==FAILED)
 		{
 			printf("line=%d, In %s(), can not output graph to file. Error!\n", __LINE__, __func__);
 			return FAILED;
@@ -312,10 +306,8 @@ short constructGraphByPEFastqSeparate(char *graphFile, char **readsFileNames, in
 		return FAILED;
 	}
 
-	releaseGraph(graph);  //释放de Bruijn图的内存
-
 	printf("totalReadNum=%lu, validReadNum=%lu, validRatio=%.4f\n", totalReadNum, validReadNum, (double)validReadNum/totalReadNum);
-	printf("newKmerNum=%ld, newRidposNum=%ld, folds=%f, nonempty=%f\n", newKmerNum, newRidposNum, (newKmerNum>0)?(double)newRidposNum/newKmerNum:0, (double)newKmerNum/hashTableSize);
+	printf("totalKmerNum=%ld, totalRidposNum=%ld, folds=%f\n", totalKmerNum, totalRidposNum, (totalKmerNum>0)?(double)totalRidposNum/totalKmerNum:0);
 
 	gettimeofday(&tpend, NULL);
 	timeuse_deBruijn = tpend.tv_sec-tpstart.tv_sec+ (double)(tpend.tv_usec-tpstart.tv_usec)/1000000;
@@ -335,24 +327,24 @@ short constructGraphByPEFastaInterleaved(char *graphFile, char **readsFileNames,
 	struct timeval tpstart,tpend;
 	gettimeofday(&tpstart,NULL);
 
-	newKmerNum = 0;
-	newRidposNum = 0;
+	totalKmerNum = 0;
+	totalRidposNum = 0;
 
 	//统计kmer的数量
-	graphtype *graph = ReadDataFilePreByPEFastaInterleaved(readsFileNames, readsFileNum);
-	if(graph)
+	deBruijnGraph = ReadDataFilePreByPEFastaInterleaved(readsFileNames, readsFileNum);
+	if(deBruijnGraph)
 	{
 		//填充kmer
-		graph = ReadDataFileByPEFastaInterleaved(readsFileNames, readsFileNum, graph);
-		if(graph==NULL)
+		deBruijnGraph = ReadDataFileByPEFastaInterleaved(readsFileNames, readsFileNum, deBruijnGraph);
+		if(deBruijnGraph==NULL)
 		{
-			printf("line=%d, In %s(), cannot construct the graph, error!\n", __LINE__, __func__);
+			printf("line=%d, In %s(), cannot construct the k-mer hash table, error!\n", __LINE__, __func__);
 			return FAILED;
 		}
 
 /*
 		// ############################ Debug information ##############################
-		if(checkGraph(graph)==FAILED)
+		if(checkGraph(deBruijnGraph)==FAILED)
 		{
 			printf("line=%d, In %s(), checking graph error!\n", __LINE__, __func__);
 			return FAILED;
@@ -361,7 +353,7 @@ short constructGraphByPEFastaInterleaved(char *graphFile, char **readsFileNames,
 */
 
 		// output the graph to file
-		if(outputGraphToFile(graphFile, graph)==FAILED)
+		if(outputGraphToFile(graphFile, deBruijnGraph)==FAILED)
 		{
 			printf("line=%d, In %s(), can not output graph to file. Error!\n", __LINE__, __func__);
 			return FAILED;
@@ -372,10 +364,8 @@ short constructGraphByPEFastaInterleaved(char *graphFile, char **readsFileNames,
 		return FAILED;
 	}
 
-	releaseGraph(graph);  //释放de Bruijn图的内存
-
 	printf("totalReadNum=%lu, validReadNum=%lu, validRatio=%.4f\n", totalReadNum, validReadNum, (double)validReadNum/totalReadNum);
-	printf("newKmerNum=%ld, newRidposNum=%ld, folds=%f, nonempty=%f\n", newKmerNum, newRidposNum, (newKmerNum>0)?(double)newRidposNum/newKmerNum:0, (double)newKmerNum/hashTableSize);
+	printf("totalKmerNum=%ld, totalRidposNum=%ld, folds=%f\n", totalKmerNum, totalRidposNum, (totalKmerNum>0)?(double)totalRidposNum/totalKmerNum:0);
 
 	gettimeofday(&tpend, NULL);
 	timeuse_deBruijn = tpend.tv_sec-tpstart.tv_sec+ (double)(tpend.tv_usec-tpstart.tv_usec)/1000000;
@@ -395,24 +385,24 @@ short constructGraphByPEFastqInterleaved(char *graphFile, char **readsFileNames,
 	struct timeval tpstart,tpend;
 	gettimeofday(&tpstart,NULL);
 
-	newKmerNum = 0;
-	newRidposNum = 0;
+	totalKmerNum = 0;
+	totalRidposNum = 0;
 
 	//统计kmer的数量
-	graphtype *graph = ReadDataFilePreByPEFastqInterleaved(readsFileNames, readsFileNum);
-	if(graph)
+	deBruijnGraph = ReadDataFilePreByPEFastqInterleaved(readsFileNames, readsFileNum);
+	if(deBruijnGraph)
 	{
 		//填充kmer
-		graph = ReadDataFileByPEFastqInterleaved(readsFileNames, readsFileNum, graph);
-		if(graph==NULL)
+		deBruijnGraph = ReadDataFileByPEFastqInterleaved(readsFileNames, readsFileNum, deBruijnGraph);
+		if(deBruijnGraph==NULL)
 		{
-			printf("line=%d, In %s(), cannot construct the graph, error!\n", __LINE__, __func__);
+			printf("line=%d, In %s(), cannot construct the k-mer hash table, error!\n", __LINE__, __func__);
 			return FAILED;
 		}
 
 /*
 		// ############################ Debug information ##############################
-		if(checkGraph(graph)==FAILED)
+		if(checkGraph(deBruijnGraph)==FAILED)
 		{
 			printf("line=%d, In %s(), checking graph error!\n", __LINE__, __func__);
 			return FAILED;
@@ -421,7 +411,7 @@ short constructGraphByPEFastqInterleaved(char *graphFile, char **readsFileNames,
 */
 
 		// output the graph to file
-		if(outputGraphToFile(graphFile, graph)==FAILED)
+		if(outputGraphToFile(graphFile, deBruijnGraph)==FAILED)
 		{
 			printf("line=%d, In %s(), can not output graph to file. Error!\n", __LINE__, __func__);
 			return FAILED;
@@ -432,10 +422,8 @@ short constructGraphByPEFastqInterleaved(char *graphFile, char **readsFileNames,
 		return FAILED;
 	}
 
-	releaseGraph(graph);  //释放de Bruijn图的内存
-
 	printf("totalReadNum=%lu, validReadNum=%lu, validRatio=%.4f\n", totalReadNum, validReadNum, (double)validReadNum/totalReadNum);
-	printf("newKmerNum=%ld, newRidposNum=%ld, folds=%f, nonempty=%f\n", newKmerNum, newRidposNum, (newKmerNum>0)?(double)newRidposNum/newKmerNum:0, (double)newKmerNum/hashTableSize);
+	printf("totalKmerNum=%ld, totalRidposNum=%ld, folds=%f\n", totalKmerNum, totalRidposNum, (totalKmerNum>0)?(double)totalRidposNum/totalKmerNum:0);
 
 	gettimeofday(&tpend, NULL);
 	timeuse_deBruijn = tpend.tv_sec-tpstart.tv_sec+ (double)(tpend.tv_usec-tpstart.tv_usec)/1000000;
@@ -444,6 +432,8 @@ short constructGraphByPEFastqInterleaved(char *graphFile, char **readsFileNames,
 
 	return SUCCESSFUL;
 }
+
+
 
 /**
  * Get the read length from fasta file.
@@ -500,7 +490,7 @@ short getMinReadLenFromFastqFiles(int *readLenInFile, char **readFilesInput, int
  *  @return:
  *  	If succeeds, return SUCCESSFUL; otherwise, return FAILED.
  */
-int getReadLenFromFasta(int *tmpReadLen, char *fastqFile)
+short getReadLenFromFasta(int *tmpReadLen, char *fastqFile)
 {
 	FILE *fpFasta;
 	readBuf_t readBuf;
@@ -575,7 +565,7 @@ int getReadLenFromFasta(int *tmpReadLen, char *fastqFile)
  *  @return:
  *  	If succeeds, return SUCCESSFUL; otherwise, return FAILED.
  */
-int getReadLenFromFastq(int *tmpReadLen, char *fastqFile)
+short getReadLenFromFastq(int *tmpReadLen, char *fastqFile)
 {
 	FILE *fpFastq;
 	readBuf_t readBuf;
@@ -655,11 +645,15 @@ int getReadLenFromFastq(int *tmpReadLen, char *fastqFile)
 graphtype *ReadDataFilePreBySEFasta(char **readsFileNames, int readsFileNum)
 {
 	FILE* srcfp;
-	int i, line_index, tmpFileID;
+	int i, tmpFileID, percent;
 	char ch, seq_data[5000]; // read sequence
+	int64_t tmpReadCount;
 
-	totalReadNum = 0;
+	printf("Filling k-mer information ...\n");
+
+	tmpReadCount = 0;
 	validReadNum = 0;
+	percent = 0;
 
 	graphtype *graph = initgraph(); //初始化de Bruijn图
 	if(!graph)
@@ -677,10 +671,9 @@ graphtype *ReadDataFilePreBySEFasta(char **readsFileNames, int readsFileNum)
 			return NULL;
 		}else
 		{
-			printf("Data File [%s] opened ok!\n", readsFileNames[tmpFileID]);
+			//printf("Data File [%s] opened ok!\n", readsFileNames[tmpFileID]);
 		}
 
-		line_index = 0;
 		ch = fgetc(srcfp);
 		while(!feof(srcfp))
 		{
@@ -699,11 +692,11 @@ graphtype *ReadDataFilePreBySEFasta(char **readsFileNames, int readsFileNum)
 			totalReadNum ++;
 
 			//printf("len = %d, %s\n", len, seq_data);
-			if(containUnknownBase(seq_data)==NO && getRatioBaseA(seq_data)<ARTIFACTS_BASE_A_THRESHOLD)
+			if(i>=readLen && containUnknownBase(seq_data)==NO && getRatioBaseA(seq_data)<ARTIFACTS_BASE_A_THRESHOLD)
 			{ //不包含‘N’
 				//readnum++;
 				validReadNum ++;
-				newRidposNum += readLen - kmerSize + 1;
+				totalRidposNum += readLen - kmerSize + 1;
 
 				//count the kmers
 				if(addReadPre(seq_data, graph)==FAILED)
@@ -715,8 +708,15 @@ graphtype *ReadDataFilePreBySEFasta(char **readsFileNames, int readsFileNum)
 
 			}
 
-			line_index = 0;
-
+			// update the processing percentage
+			if((int)((double)tmpReadCount/totalReadNum*100) > percent)
+			{
+				percent = (int)((double)tmpReadCount/totalReadNum*100);
+				printf("%d%%", percent);
+				if(percent%10==0) printf("\n");
+				else printf("\t");
+				fflush(stdout);
+			}
 		}
 
 		fclose(srcfp);
@@ -735,11 +735,15 @@ graphtype *ReadDataFilePreBySEFasta(char **readsFileNames, int readsFileNum)
 graphtype *ReadDataFilePreBySEFastq(char **readsFileNames, int readsFileNum)
 {
 	FILE* srcfp;
-	int i, line_index, tmpFileID;
+	int i, tmpLen, line_index, tmpFileID, percent;
 	char ch, seq_data[5000], qual_data[5000]; // read sequence, read quality data which is encoded in ASCII
+	int64_t tmpReadCount;
 
-	totalReadNum = 0;
+	printf("Filling k-mer information ...\n");
+
+	tmpReadCount = 0;
 	validReadNum = 0;
+	percent = 0;
 
 	graphtype *graph = initgraph(); //初始化de Bruijn图
 	if(!graph)
@@ -757,7 +761,7 @@ graphtype *ReadDataFilePreBySEFastq(char **readsFileNames, int readsFileNum)
 			return NULL;
 		}else
 		{
-			printf("Data File [%s] opened ok!\n", readsFileNames[tmpFileID]);
+			//printf("Data File [%s] opened ok!\n", readsFileNames[tmpFileID]);
 		}
 
 		line_index = 0;
@@ -773,19 +777,19 @@ graphtype *ReadDataFilePreBySEFastq(char **readsFileNames, int readsFileNum)
 				}
 			}else if(line_index==1)  //the sequence line
 			{
-				i = 0;
+				tmpLen = 0;
 				ch = fgetc(srcfp);
-				while(ch!='\n')
+				while(ch!='\n' && ch!=-1)
 				{
-					if(i<readLen)
-						seq_data[i++] = ch;
+					if(tmpLen<readLen)
+						seq_data[tmpLen++] = ch;
 					ch = fgetc(srcfp);
 				}
-				seq_data[i] = '\0';
+				seq_data[tmpLen] = '\0';
 			}else if(line_index==2)  //the sequence name line
 			{
 				ch = fgetc(srcfp);
-				while(ch!='\n')
+				while(ch!='\n' && ch!=-1)
 				{
 					ch = fgetc(srcfp);
 				}
@@ -805,15 +809,15 @@ graphtype *ReadDataFilePreBySEFastq(char **readsFileNames, int readsFileNum)
 
 			if(line_index==4)  //the sequence is read finished, construct the read
 			{
-				totalReadNum ++;
+				tmpReadCount ++;
 
 				//printf("len = %d, %s\n", len, seq_data);
 				//if(contianUnknownBase(seq_data)==NO && calcAverQual5End(qual_data)>=AVERAGE_QUAL_THRESHOLD_5End && calcAverQual3End(qual_data)>=AVERAGE_QUAL_THRESHOLD_3End && getRatioBaseA(seq_data)<ARTIFACTS_BASE_A_THRESHOLD)
-				if(containUnknownBase(seq_data)==NO && calcAverQual5End(qual_data)>=AVERAGE_QUAL_THRESHOLD_5End && qualSatisfied(qual_data)==YES && calcAverQual3End(qual_data)>=AVERAGE_QUAL_THRESHOLD_3End && getRatioBaseA(seq_data)<ARTIFACTS_BASE_A_THRESHOLD)
+				if(tmpLen>=readLen && containUnknownBase(seq_data)==NO && calcAverQual5End(qual_data)>=AVERAGE_QUAL_THRESHOLD_5End && qualSatisfied(qual_data)==YES && calcAverQual3End(qual_data)>=AVERAGE_QUAL_THRESHOLD_3End && getRatioBaseA(seq_data)<ARTIFACTS_BASE_A_THRESHOLD)
 				{ //不包含‘N’, 并且相应碱基的平均质量大于15
 					//readnum++;
 					validReadNum ++;
-					newRidposNum += readLen - kmerSize + 1;
+					totalRidposNum += readLen - kmerSize + 1;
 
 					//count the kmers
 					if(addReadPre(seq_data, graph)==FAILED)
@@ -826,6 +830,16 @@ graphtype *ReadDataFilePreBySEFastq(char **readsFileNames, int readsFileNum)
 				}
 
 				line_index = 0;
+
+				// update the processing percentage
+				if((int)((double)tmpReadCount/totalReadNum*100) > percent)
+				{
+					percent = (int)((double)tmpReadCount/totalReadNum*100);
+					printf("%d%%", percent);
+					if(percent%10==0) printf("\n");
+					else printf("\t");
+					fflush(stdout);
+				}
 			}
 		}
 
@@ -842,6 +856,10 @@ graphtype *ReadDataFilePreByPEFastaSeparate(char **readsFileNames, int readsFile
 	FILE *fp1, *fp2;
 	uint64_t i, j, tmpReadsNum[2], tmpFileID;
 	char *seq_data;
+	int percent;
+	int64_t tmpReadCount;
+
+	printf("Filling k-mer information ...\n");
 
 	for(i=0; i<2; i++)
 	{
@@ -853,7 +871,7 @@ graphtype *ReadDataFilePreByPEFastaSeparate(char **readsFileNames, int readsFile
 		}
 		for(j=0; j<MAX_READ_BUF_SIZE; j++)
 		{
-			readBuf[i][j].seq = (char *)malloc(sizeof(char)*(readLenInFile+1));
+			readBuf[i][j].seq = (char *)malloc(sizeof(char)*(maxReadLenInFile+1));
 			if(readBuf[i][j].seq==NULL)
 			{
 				printf("In %s(), can not allocate memory, Error.\n", __func__);
@@ -869,8 +887,9 @@ graphtype *ReadDataFilePreByPEFastaSeparate(char **readsFileNames, int readsFile
 		return NULL;
 	}
 
-	totalReadNum = 0;
 	validReadNum = 0;
+	percent = 0;
+	tmpReadCount = 0;
 
 	for(tmpFileID=0; tmpFileID<readsFileNum; tmpFileID+=2)
 	{
@@ -881,7 +900,7 @@ graphtype *ReadDataFilePreByPEFastaSeparate(char **readsFileNames, int readsFile
 			return NULL;
 		}else
 		{
-			printf("Data File [%s] opened ok!\n", readsFileNames[tmpFileID]);
+			//printf("Data File [%s] opened ok!\n", readsFileNames[tmpFileID]);
 		}
 		fp2 = fopen(readsFileNames[tmpFileID+1], "r");
 		if(fp2==NULL)
@@ -890,7 +909,7 @@ graphtype *ReadDataFilePreByPEFastaSeparate(char **readsFileNames, int readsFile
 			return NULL;
 		}else
 		{
-			printf("Data File [%s] opened ok!\n", readsFileNames[tmpFileID+1]);
+			//printf("Data File [%s] opened ok!\n", readsFileNames[tmpFileID+1]);
 		}
 
 		while(1)
@@ -929,15 +948,15 @@ graphtype *ReadDataFilePreByPEFastaSeparate(char **readsFileNames, int readsFile
 				{
 					seq_data = readBuf[j][i].seq;
 
-					if(readLen<readLenInFile)
+					if(readLen<readBuf[j][i].len)
 						seq_data[readLen] = '\0';
 
 					//printf("len = %d, %s\n", len, seq_data);
-					if(containUnknownBase(seq_data)==NO  && getRatioBaseA(seq_data)<ARTIFACTS_BASE_A_THRESHOLD)
+					if(readBuf[j][i].len>=readLen && containUnknownBase(seq_data)==NO  && getRatioBaseA(seq_data)<ARTIFACTS_BASE_A_THRESHOLD)
 					{ //不包含‘N’, 并且相应碱基的平均质量大于15
 						//readnum++;
 						validReadNum ++;
-						newRidposNum += readLen - kmerSize + 1;
+						totalRidposNum += readLen - kmerSize + 1;
 
 						//count the kmers
 						if(addReadPre(seq_data, graph)==FAILED)
@@ -947,7 +966,17 @@ graphtype *ReadDataFilePreByPEFastaSeparate(char **readsFileNames, int readsFile
 							return NULL;
 						}
 					}
-					totalReadNum ++;
+				}
+				tmpReadCount += 2;
+
+				// update the processing percentage
+				if((int)((double)tmpReadCount/totalReadNum*100) > percent)
+				{
+					percent = (int)((double)tmpReadCount/totalReadNum*100);
+					printf("%d%%", percent);
+					if(percent%10==0) printf("\n");
+					else printf("\t");
+					fflush(stdout);
 				}
 			}
 		}
@@ -976,6 +1005,10 @@ graphtype *ReadDataFilePreByPEFastqSeparate(char **readsFileNames, int readsFile
 	FILE *fp1, *fp2;
 	uint64_t i, j, tmpReadsNum[2], tmpFileID;
 	char *seq_data, *qual_data;
+	int percent;
+	int64_t tmpReadCount;
+
+	printf("Filling k-mer information ...\n");
 
 	for(i=0; i<2; i++)
 	{
@@ -987,13 +1020,13 @@ graphtype *ReadDataFilePreByPEFastqSeparate(char **readsFileNames, int readsFile
 		}
 		for(j=0; j<MAX_READ_BUF_SIZE; j++)
 		{
-			readBuf[i][j].seq = (char *)malloc(sizeof(char)*(readLenInFile+1));
+			readBuf[i][j].seq = (char *)malloc(sizeof(char)*(maxReadLenInFile+1));
 			if(readBuf[i][j].seq==NULL)
 			{
 				printf("In %s(), can not allocate memory, Error.\n", __func__);
 				return NULL;
 			}
-			readBuf[i][j].qual = (char *)malloc(sizeof(char)*(readLenInFile+1));
+			readBuf[i][j].qual = (char *)malloc(sizeof(char)*(maxReadLenInFile+1));
 			if(readBuf[i][j].qual==NULL)
 			{
 				printf("In %s(), can not allocate memory, Error.\n", __func__);
@@ -1009,8 +1042,9 @@ graphtype *ReadDataFilePreByPEFastqSeparate(char **readsFileNames, int readsFile
 		return NULL;
 	}
 
-	totalReadNum = 0;
 	validReadNum = 0;
+	percent = 0;
+	tmpReadCount = 0;
 
 	for(tmpFileID=0; tmpFileID<readsFileNum; tmpFileID+=2)
 	{
@@ -1021,7 +1055,7 @@ graphtype *ReadDataFilePreByPEFastqSeparate(char **readsFileNames, int readsFile
 			return NULL;
 		}else
 		{
-			printf("Data File [%s] opened ok!\n", readsFileNames[tmpFileID]);
+			//printf("Data File [%s] opened ok!\n", readsFileNames[tmpFileID]);
 		}
 		fp2 = fopen(readsFileNames[tmpFileID+1], "r");
 		if(fp2==NULL)
@@ -1030,7 +1064,7 @@ graphtype *ReadDataFilePreByPEFastqSeparate(char **readsFileNames, int readsFile
 			return NULL;
 		}else
 		{
-			printf("Data File [%s] opened ok!\n", readsFileNames[tmpFileID+1]);
+			//printf("Data File [%s] opened ok!\n", readsFileNames[tmpFileID+1]);
 		}
 
 		while(1)
@@ -1041,24 +1075,24 @@ graphtype *ReadDataFilePreByPEFastqSeparate(char **readsFileNames, int readsFile
 				break;
 			}else if(feof(fp1) || feof(fp2))
 			{
-				printf("In %s(), cannot fill the read buffer, error!\n", __func__);
+				printf("line=%d, In %s(), cannot fill the read buffer, error!\n", __LINE__, __func__);
 				return NULL;
 			}
 
 			// fille the reads to reads buffers
 			if(fillReadsToBuf(fp1, readBuf[0], tmpReadsNum)==FAILED)
 			{
-				printf("In %s(), cannot fill the read buffer, error!\n", __func__);
+				printf("line=%d, In %s(), cannot fill the read buffer, error!\n", __LINE__, __func__);
 				return NULL;
 			}
 			if(fillReadsToBuf(fp2, readBuf[1], tmpReadsNum+1)==FAILED)
 			{
-				printf("In %s(), cannot fill the read buffer, error!\n", __func__);
+				printf("line=%d, In %s(), cannot fill the read buffer, error!\n", __LINE__, __func__);
 				return NULL;
 			}
 			if(tmpReadsNum[0]!=tmpReadsNum[1])
 			{
-				printf("In %s(), cannot fill the read buffer, error!\n", __func__);
+				printf("line=%d, In %s(), cannot fill the read buffer, error!\n", __LINE__, __func__);
 				return NULL;
 			}
 
@@ -1070,7 +1104,7 @@ graphtype *ReadDataFilePreByPEFastqSeparate(char **readsFileNames, int readsFile
 					seq_data = readBuf[j][i].seq;
 					qual_data = readBuf[j][i].qual;
 
-					if(readLen<readLenInFile)
+					if(readLen<readBuf[j][i].len)
 					{
 						seq_data[readLen] = '\0';
 						qual_data[readLen] = '\0';
@@ -1078,11 +1112,11 @@ graphtype *ReadDataFilePreByPEFastqSeparate(char **readsFileNames, int readsFile
 
 					//printf("len = %d, %s\n", len, seq_data);
 					//if(contianUnknownBase(seq_data)==NO && calcAverQual5End(qual_data)>=AVERAGE_QUAL_THRESHOLD_5End && calcAverQual3End(qual_data)>=AVERAGE_QUAL_THRESHOLD_3End && getRatioBaseA(seq_data)<ARTIFACTS_BASE_A_THRESHOLD)
-					if(containUnknownBase(seq_data)==NO && calcAverQual5End(qual_data)>=AVERAGE_QUAL_THRESHOLD_5End && qualSatisfied(qual_data)==YES && calcAverQual3End(qual_data)>=AVERAGE_QUAL_THRESHOLD_3End && getRatioBaseA(seq_data)<ARTIFACTS_BASE_A_THRESHOLD)
+					if(readBuf[j][i].len>=readLen && containUnknownBase(seq_data)==NO && calcAverQual5End(qual_data)>=AVERAGE_QUAL_THRESHOLD_5End && qualSatisfied(qual_data)==YES && calcAverQual3End(qual_data)>=AVERAGE_QUAL_THRESHOLD_3End && getRatioBaseA(seq_data)<ARTIFACTS_BASE_A_THRESHOLD)
 					{ //不包含‘N’, 并且相应碱基的平均质量大于15
 						//readnum++;
 						validReadNum ++;
-						newRidposNum += readLen - kmerSize + 1;
+						totalRidposNum += readLen - kmerSize + 1;
 
 						//count the kmers
 						if(addReadPre(seq_data, graph)==FAILED)
@@ -1092,7 +1126,20 @@ graphtype *ReadDataFilePreByPEFastqSeparate(char **readsFileNames, int readsFile
 							return NULL;
 						}
 					}
-					totalReadNum ++;
+				}
+				tmpReadCount += 2;
+
+//				if(tmpReadCount>1999996)
+//					printf("tmpReadCount=%ld\n", tmpReadCount);
+
+				// update the processing percentage
+				if((int)((double)tmpReadCount/totalReadNum*100) > percent)
+				{
+					percent = (int)((double)tmpReadCount/totalReadNum*100);
+					printf("%d%%", percent);
+					if(percent%10==0) printf("\n");
+					else printf("\t");
+					fflush(stdout);
 				}
 			}
 		}
@@ -1119,11 +1166,15 @@ graphtype *ReadDataFilePreByPEFastqSeparate(char **readsFileNames, int readsFile
 graphtype *ReadDataFilePreByPEFastaInterleaved(char **readsFileNames, int readsFileNum)
 {
 	FILE* srcfp;
-	int i, pairedID, tmpFileID;
+	int i, pairedID, tmpFileID, percent;
 	char ch, seq_data[2][5000]; // read sequence, read quality data which is encoded in ASCII
+	int64_t tmpReadCount;
 
-	totalReadNum = 0;
+	printf("Filling k-mer information ...\n");
+
+	tmpReadCount = 0;
 	validReadNum = 0;
+	percent = 0;
 
 	graphtype *graph = initgraph(); //初始化de Bruijn图
 	if(!graph)
@@ -1141,7 +1192,7 @@ graphtype *ReadDataFilePreByPEFastaInterleaved(char **readsFileNames, int readsF
 			return NULL;
 		}else
 		{
-			printf("Data File [%s] opened ok!\n", readsFileNames[tmpFileID]);
+			//printf("Data File [%s] opened ok!\n", readsFileNames[tmpFileID]);
 		}
 
 		pairedID = 0;
@@ -1160,14 +1211,14 @@ graphtype *ReadDataFilePreByPEFastaInterleaved(char **readsFileNames, int readsF
 			}
 			seq_data[pairedID][i] = '\0';
 
-			totalReadNum ++;
+			tmpReadCount ++;
 
 			//printf("len = %d, %s\n", len, seq_data);
-			if(containUnknownBase(seq_data[pairedID])==NO && getRatioBaseA(seq_data[pairedID])<ARTIFACTS_BASE_A_THRESHOLD)
+			if(i>=readLen && containUnknownBase(seq_data[pairedID])==NO && getRatioBaseA(seq_data[pairedID])<ARTIFACTS_BASE_A_THRESHOLD)
 			{ //不包含‘N’
 				//readnum++;
 				validReadNum ++;
-				newRidposNum += readLen - kmerSize + 1;
+				totalRidposNum += readLen - kmerSize + 1;
 
 				//count the kmers
 				if(addReadPre(seq_data[pairedID], graph)==FAILED)
@@ -1184,6 +1235,15 @@ graphtype *ReadDataFilePreByPEFastaInterleaved(char **readsFileNames, int readsF
 			else
 				pairedID ++;
 
+			// update the processing percentage
+			if((int)((double)tmpReadCount/totalReadNum*100) > percent)
+			{
+				percent = (int)((double)tmpReadCount/totalReadNum*100);
+				printf("%d%%", percent);
+				if(percent%10==0) printf("\n");
+				else printf("\t");
+				fflush(stdout);
+			}
 		}
 
 		fclose(srcfp);
@@ -1196,11 +1256,15 @@ graphtype *ReadDataFilePreByPEFastaInterleaved(char **readsFileNames, int readsF
 graphtype *ReadDataFilePreByPEFastqInterleaved(char **readsFileNames, int readsFileNum)
 {
 	FILE* srcfp;
-	int i, line_index, pairedID, tmpFileID;
+	int i, tmpLen, line_index, pairedID, tmpFileID, percent;
 	char ch, seq_data[2][5000], qual_data[2][5000]; // read sequence, read quality data which is encoded in ASCII
+	int64_t tmpReadCount;
 
-	totalReadNum = 0;
+	printf("Filling k-mer information ...\n");
+
+	tmpReadCount = 0;
 	validReadNum = 0;
+	percent = 0;
 
 	graphtype *graph = initgraph(); //初始化de Bruijn图
 	if(!graph)
@@ -1218,7 +1282,7 @@ graphtype *ReadDataFilePreByPEFastqInterleaved(char **readsFileNames, int readsF
 			return NULL;
 		}else
 		{
-			printf("Data File [%s] opened ok!\n", readsFileNames[tmpFileID]);
+			//printf("Data File [%s] opened ok!\n", readsFileNames[tmpFileID]);
 		}
 
 		pairedID = 0;
@@ -1230,24 +1294,22 @@ graphtype *ReadDataFilePreByPEFastqInterleaved(char **readsFileNames, int readsF
 			{
 				ch = fgetc(srcfp);
 				while(ch!='\n' && ch!=-1)
-				{
 					ch = fgetc(srcfp);
-				}
 			}else if(line_index==1)  //the sequence line
 			{
-				i = 0;
+				tmpLen = 0;
 				ch = fgetc(srcfp);
-				while(ch!='\n')
+				while(ch!='\n' && ch!=-1)
 				{
-					if(i<readLen)
-						seq_data[pairedID][i++] = ch;
+					if(tmpLen<readLen)
+						seq_data[pairedID][tmpLen++] = ch;
 					ch = fgetc(srcfp);
 				}
-				seq_data[pairedID][i] = '\0';
+				seq_data[pairedID][tmpLen] = '\0';
 			}else if(line_index==2)  //the sequence name line
 			{
 				ch = fgetc(srcfp);
-				while(ch!='\n')
+				while(ch!='\n' && ch!=-1)
 				{
 					ch = fgetc(srcfp);
 				}
@@ -1267,15 +1329,15 @@ graphtype *ReadDataFilePreByPEFastqInterleaved(char **readsFileNames, int readsF
 
 			if(line_index==4)  //the sequence is read finished, construct the read
 			{
-				totalReadNum ++;
+				tmpReadCount ++;
 
 				//printf("len = %d, %s\n", len, seq_data);
 				//if(contianUnknownBase(seq_data)==NO && calcAverQual5End(qual_data)>=AVERAGE_QUAL_THRESHOLD_5End && calcAverQual3End(qual_data)>=AVERAGE_QUAL_THRESHOLD_3End && getRatioBaseA(seq_data)<ARTIFACTS_BASE_A_THRESHOLD)
-				if(containUnknownBase(seq_data[pairedID])==NO && calcAverQual5End(qual_data[pairedID])>=AVERAGE_QUAL_THRESHOLD_5End && qualSatisfied(qual_data[pairedID])==YES && calcAverQual3End(qual_data[pairedID])>=AVERAGE_QUAL_THRESHOLD_3End && getRatioBaseA(seq_data[pairedID])<ARTIFACTS_BASE_A_THRESHOLD)
+				if(tmpLen>=readLen && containUnknownBase(seq_data[pairedID])==NO && calcAverQual5End(qual_data[pairedID])>=AVERAGE_QUAL_THRESHOLD_5End && qualSatisfied(qual_data[pairedID])==YES && calcAverQual3End(qual_data[pairedID])>=AVERAGE_QUAL_THRESHOLD_3End && getRatioBaseA(seq_data[pairedID])<ARTIFACTS_BASE_A_THRESHOLD)
 				{ //不包含‘N’, 并且相应碱基的平均质量大于15
 					//readnum++;
 					validReadNum ++;
-					newRidposNum += readLen - kmerSize + 1;
+					totalRidposNum += readLen - kmerSize + 1;
 
 					//count the kmers
 					if(addReadPre(seq_data[pairedID], graph)==FAILED)
@@ -1294,6 +1356,15 @@ graphtype *ReadDataFilePreByPEFastqInterleaved(char **readsFileNames, int readsF
 				else
 					pairedID ++;
 
+				// update the processing percentage
+				if((int)((double)tmpReadCount/totalReadNum*100) > percent)
+				{
+					percent = (int)((double)tmpReadCount/totalReadNum*100);
+					printf("%d%%", percent);
+					if(percent%10==0) printf("\n");
+					else printf("\t");
+					fflush(stdout);
+				}
 			}
 		}
 
@@ -1394,6 +1465,8 @@ short getSingleReadFasta(FILE *fpPE, readBuf_t *pReadBuf)
 		}
 		readSeq[i] = '\0';
 
+		pReadBuf->len = i;
+
 		if(ch=='>')  //a read is read finished
 		{
 			break;
@@ -1412,7 +1485,7 @@ short getSingleReadFasta(FILE *fpPE, readBuf_t *pReadBuf)
  */
 short getSingleReadFastq(FILE *fpPE, readBuf_t *pReadBuf)
 {
-	unsigned short i, line_index = 0;
+	unsigned short i, line_index, tmpLen;
 	//char qual_data[5000];	// read quality data which is encoded in ASCII
 	char *readSeq, *qual_data;
 	readSeq = pReadBuf->seq;
@@ -1424,30 +1497,28 @@ short getSingleReadFastq(FILE *fpPE, readBuf_t *pReadBuf)
 		return FAILED;
 	}
 
+	line_index = 0;
 	while(!feof(fpPE))
 	{
 		if(line_index==0)  //the sequence name line
 		{
-			i = 0;
+			ch = fgetc(fpPE);
+			while(ch!='\n' && ch!=-1)
+				ch = fgetc(fpPE);
+		}else if(line_index==1)  //the sequence line
+		{
+			tmpLen = 0;
 			ch = fgetc(fpPE);
 			while(ch!='\n' && ch!=-1)
 			{
+				readSeq[tmpLen++] = ch;
 				ch = fgetc(fpPE);
 			}
-		}else if(line_index==1)  //the sequence line
-		{
-			i = 0;
-			ch = fgetc(fpPE);
-			while(ch!='\n')
-			{
-				readSeq[i++] = ch;
-				ch = fgetc(fpPE);
-			}
-			readSeq[i] = '\0';
+			readSeq[tmpLen] = '\0';
 		}else if(line_index==2)  //the sequence name line
 		{
 			ch = fgetc(fpPE);
-			while(ch!='\n')
+			while(ch!='\n' && ch!=-1)
 			{
 				ch = fgetc(fpPE);
 			}
@@ -1466,6 +1537,7 @@ short getSingleReadFastq(FILE *fpPE, readBuf_t *pReadBuf)
 
 		if(line_index==4)  //a read is read finished
 		{
+			pReadBuf->len = tmpLen;
 			break;
 		}
 	}
@@ -1654,7 +1726,7 @@ short addReadPre(char *seq, graphtype *graph)
  *  @return:
  *  	If succeeds, return SUCCESSFUL; otherwise, return FAILED.
  */
-int generateKmerSeqInt(uint64_t *seqInt, char *seq)
+short generateKmerSeqInt(uint64_t *seqInt, char *seq)
 {
 	int i, j, baseInt;
 
@@ -1694,12 +1766,15 @@ int generateKmerSeqInt(uint64_t *seqInt, char *seq)
  */
 graphtype *ReadDataFileBySEFasta(char **readsFileNames, int readsFileNum, graphtype *graph)
 {
-	int i, line_index, tmpFileID;
+	int i, line_index, tmpFileID, percent;
 	int64_t readnum;  //read number
 	char ch, seq_data[5000]; // read sequence, read quality data which is encoded in ASCII
 	FILE* srcfp;
 
+	printf("Filling reads information ...\n");
+
 	readnum = 0;  //read number
+	percent = 0;
 
 	for(tmpFileID=0; tmpFileID<readsFileNum; tmpFileID++)
 	{
@@ -1711,7 +1786,7 @@ graphtype *ReadDataFileBySEFasta(char **readsFileNames, int readsFileNum, grapht
 			return NULL;
 		}else
 		{
-			printf("Data File [%s] opened ok!\n", readsFileNames[tmpFileID]);
+			//printf("Data File [%s] opened ok!\n", readsFileNames[tmpFileID]);
 		}
 
 		line_index = 0;
@@ -1730,11 +1805,10 @@ graphtype *ReadDataFileBySEFasta(char **readsFileNames, int readsFileNum, grapht
 			}
 			seq_data[i] = '\0';
 
-
 			readnum ++;
 
 			//printf("len = %d, %s\n", len, seq_data);
-			if(containUnknownBase(seq_data)==NO && getRatioBaseA(seq_data)<ARTIFACTS_BASE_A_THRESHOLD)
+			if(i>=readLen && containUnknownBase(seq_data)==NO && getRatioBaseA(seq_data)<ARTIFACTS_BASE_A_THRESHOLD)
 			{ //不包含‘N’
 
 				//add the read
@@ -1744,9 +1818,17 @@ graphtype *ReadDataFileBySEFasta(char **readsFileNames, int readsFileNum, grapht
 					releaseGraph(graph);
 					return NULL;
 				}
-
 			}
 
+			// update the processing percentage
+			if((int)((double)readnum/totalReadNum*100) > percent)
+			{
+				percent = (int)((double)readnum/totalReadNum*100);
+				printf("%d%%", percent);
+				if(percent%10==0) printf("\n");
+				else printf("\t");
+				fflush(stdout);
+			}
 		}
 
 		fclose(srcfp);
@@ -1763,12 +1845,15 @@ graphtype *ReadDataFileBySEFasta(char **readsFileNames, int readsFileNum, grapht
  */
 graphtype *ReadDataFileBySEFastq(char **readsFileNames, int readsFileNum, graphtype *graph)
 {
-	int i, line_index, tmpFileID;
+	int i, tmpLen, line_index, tmpFileID, percent;
 	int64_t readnum;  //read number
 	char ch, seq_data[5000], qual_data[5000]; // read sequence, read quality data which is encoded in ASCII
 	FILE* srcfp;
 
+	printf("Filling reads information ...\n");
+
 	readnum = 0;  //read number
+	percent = 0;
 
 	for(tmpFileID=0; tmpFileID<readsFileNum; tmpFileID++)
 	{
@@ -1780,7 +1865,7 @@ graphtype *ReadDataFileBySEFastq(char **readsFileNames, int readsFileNum, grapht
 			return NULL;
 		}else
 		{
-			printf("Data File [%s] opened ok!\n", readsFileNames[tmpFileID]);
+			//printf("Data File [%s] opened ok!\n", readsFileNames[tmpFileID]);
 		}
 
 		line_index = 0;
@@ -1796,15 +1881,15 @@ graphtype *ReadDataFileBySEFastq(char **readsFileNames, int readsFileNum, grapht
 				}
 			}else if(line_index==1)  //the sequence line
 			{
-				i = 0;
+				tmpLen = 0;
 				ch = fgetc(srcfp);
 				while(ch!='\n')
 				{
-					if(i<readLen)
-						seq_data[i++] = ch;
+					if(tmpLen<readLen)
+						seq_data[tmpLen++] = ch;
 					ch = fgetc(srcfp);
 				}
-				seq_data[i] = '\0';
+				seq_data[tmpLen] = '\0';
 			}else if(line_index==2)  //the sequence name line
 			{
 				ch = fgetc(srcfp);
@@ -1832,7 +1917,7 @@ graphtype *ReadDataFileBySEFastq(char **readsFileNames, int readsFileNum, grapht
 
 				//printf("len = %d, %s\n", len, seq_data);
 				//if(contianUnknownBase(seq_data)==NO && calcAverQual5End(qual_data)>=AVERAGE_QUAL_THRESHOLD_5End && calcAverQual3End(qual_data)>=AVERAGE_QUAL_THRESHOLD_3End && getRatioBaseA(seq_data)<ARTIFACTS_BASE_A_THRESHOLD)
-				if(containUnknownBase(seq_data)==NO && calcAverQual5End(qual_data)>=AVERAGE_QUAL_THRESHOLD_5End && qualSatisfied(qual_data)==YES && calcAverQual3End(qual_data)>=AVERAGE_QUAL_THRESHOLD_3End && getRatioBaseA(seq_data)<ARTIFACTS_BASE_A_THRESHOLD)
+				if(tmpLen>=readLen && containUnknownBase(seq_data)==NO && calcAverQual5End(qual_data)>=AVERAGE_QUAL_THRESHOLD_5End && qualSatisfied(qual_data)==YES && calcAverQual3End(qual_data)>=AVERAGE_QUAL_THRESHOLD_3End && getRatioBaseA(seq_data)<ARTIFACTS_BASE_A_THRESHOLD)
 				{ //不包含‘N’, 并且相应碱基的平均质量大于15
 
 					//add the read
@@ -1846,6 +1931,16 @@ graphtype *ReadDataFileBySEFastq(char **readsFileNames, int readsFileNum, grapht
 				}
 
 				line_index = 0;
+
+				// update the processing percentage
+				if((int)((double)readnum/totalReadNum*100) > percent)
+				{
+					percent = (int)((double)readnum/totalReadNum*100);
+					printf("%d%%", percent);
+					if(percent%10==0) printf("\n");
+					else printf("\t");
+					fflush(stdout);
+				}
 			}
 		}
 
@@ -1863,6 +1958,9 @@ graphtype *ReadDataFileByPEFastaSeparate(char **readsFileNames, int readsFileNum
 	uint64_t i, j, tmpReadsNum[2];
 	char *seq_data;
 	uint64_t readID, tmpFileID;
+	int percent;
+
+	printf("Filling reads information ...\n");
 
 	for(i=0; i<2; i++)
 	{
@@ -1874,7 +1972,7 @@ graphtype *ReadDataFileByPEFastaSeparate(char **readsFileNames, int readsFileNum
 		}
 		for(j=0; j<MAX_READ_BUF_SIZE; j++)
 		{
-			readBuf[i][j].seq = (char *)malloc(sizeof(char)*(readLenInFile+1));
+			readBuf[i][j].seq = (char *)malloc(sizeof(char)*(maxReadLenInFile+1));
 			if(readBuf[i][j].seq==NULL)
 			{
 				printf("In %s(), can not allocate memory, Error.\n", __func__);
@@ -1883,6 +1981,7 @@ graphtype *ReadDataFileByPEFastaSeparate(char **readsFileNames, int readsFileNum
 		}
 	}
 
+	percent = 0;
 	readID = 1;
 	for(tmpFileID=0; tmpFileID<readsFileNum; tmpFileID+=2)
 	{
@@ -1893,7 +1992,7 @@ graphtype *ReadDataFileByPEFastaSeparate(char **readsFileNames, int readsFileNum
 			return NULL;
 		}else
 		{
-			printf("Data File [%s] opened ok!\n", readsFileNames[tmpFileID]);
+			//printf("Data File [%s] opened ok!\n", readsFileNames[tmpFileID]);
 		}
 		fp2 = fopen(readsFileNames[tmpFileID+1], "r");
 		if(fp2==NULL)
@@ -1902,7 +2001,7 @@ graphtype *ReadDataFileByPEFastaSeparate(char **readsFileNames, int readsFileNum
 			return NULL;
 		}else
 		{
-			printf("Data File [%s] opened ok!\n", readsFileNames[tmpFileID+1]);
+			//printf("Data File [%s] opened ok!\n", readsFileNames[tmpFileID+1]);
 		}
 
 		while(1)
@@ -1941,11 +2040,11 @@ graphtype *ReadDataFileByPEFastaSeparate(char **readsFileNames, int readsFileNum
 				{
 					seq_data = readBuf[j][i].seq;
 
-					if(readLen<readLenInFile)
+					if(readLen<readBuf[j][i].len)
 						seq_data[readLen] = '\0';
 
 					//printf("len = %d, %s\n", len, seq_data);
-					if(containUnknownBase(seq_data)==NO && getRatioBaseA(seq_data)<ARTIFACTS_BASE_A_THRESHOLD)
+					if(readBuf[j][i].len>=readLen && containUnknownBase(seq_data)==NO && getRatioBaseA(seq_data)<ARTIFACTS_BASE_A_THRESHOLD)
 					{ //不包含‘N’
 
 						//add the read
@@ -1958,6 +2057,16 @@ graphtype *ReadDataFileByPEFastaSeparate(char **readsFileNames, int readsFileNum
 
 					}
 					readID ++;
+				}
+
+				// update the processing percentage
+				if((int)((double)(readID-1)/totalReadNum*100) > percent)
+				{
+					percent = (int)((double)(readID-1)/totalReadNum*100);
+					printf("%d%%", percent);
+					if(percent%10==0) printf("\n");
+					else printf("\t");
+					fflush(stdout);
 				}
 			}
 		}
@@ -1985,6 +2094,9 @@ graphtype *ReadDataFileByPEFastqSeparate(char **readsFileNames, int readsFileNum
 	uint64_t i, j, tmpReadsNum[2];
 	char *seq_data, *qual_data;
 	uint64_t readID, tmpFileID;
+	int percent;
+
+	printf("Filling reads information ...\n");
 
 	for(i=0; i<2; i++)
 	{
@@ -1996,13 +2108,13 @@ graphtype *ReadDataFileByPEFastqSeparate(char **readsFileNames, int readsFileNum
 		}
 		for(j=0; j<MAX_READ_BUF_SIZE; j++)
 		{
-			readBuf[i][j].seq = (char *)malloc(sizeof(char)*(readLenInFile+1));
+			readBuf[i][j].seq = (char *)malloc(sizeof(char)*(maxReadLenInFile+1));
 			if(readBuf[i][j].seq==NULL)
 			{
 				printf("In %s(), can not allocate memory, Error.\n", __func__);
 				return NULL;
 			}
-			readBuf[i][j].qual = (char *)malloc(sizeof(char)*(readLenInFile+1));
+			readBuf[i][j].qual = (char *)malloc(sizeof(char)*(maxReadLenInFile+1));
 			if(readBuf[i][j].qual==NULL)
 			{
 				printf("In %s(), can not allocate memory, Error.\n", __func__);
@@ -2011,6 +2123,7 @@ graphtype *ReadDataFileByPEFastqSeparate(char **readsFileNames, int readsFileNum
 		}
 	}
 
+	percent = 0;
 	readID = 1;
 	for(tmpFileID=0; tmpFileID<readsFileNum; tmpFileID+=2)
 	{
@@ -2021,7 +2134,7 @@ graphtype *ReadDataFileByPEFastqSeparate(char **readsFileNames, int readsFileNum
 			return NULL;
 		}else
 		{
-			printf("Data File [%s] opened ok!\n", readsFileNames[tmpFileID]);
+			//printf("Data File [%s] opened ok!\n", readsFileNames[tmpFileID]);
 		}
 		fp2 = fopen(readsFileNames[tmpFileID+1], "r");
 		if(fp2==NULL)
@@ -2030,7 +2143,7 @@ graphtype *ReadDataFileByPEFastqSeparate(char **readsFileNames, int readsFileNum
 			return NULL;
 		}else
 		{
-			printf("Data File [%s] opened ok!\n", readsFileNames[tmpFileID+1]);
+			//printf("Data File [%s] opened ok!\n", readsFileNames[tmpFileID+1]);
 		}
 
 		while(1)
@@ -2070,7 +2183,7 @@ graphtype *ReadDataFileByPEFastqSeparate(char **readsFileNames, int readsFileNum
 					seq_data = readBuf[j][i].seq;
 					qual_data = readBuf[j][i].qual;
 
-					if(readLen<readLenInFile)
+					if(readLen<readBuf[j][i].len)
 					{
 						seq_data[readLen] = '\0';
 						qual_data[readLen] = '\0';
@@ -2078,7 +2191,7 @@ graphtype *ReadDataFileByPEFastqSeparate(char **readsFileNames, int readsFileNum
 
 					//printf("len = %d, %s\n", len, seq_data);
 					//if(contianUnknownBase(seq_data)==NO && calcAverQual5End(qual_data)>=AVERAGE_QUAL_THRESHOLD_5End && calcAverQual3End(qual_data)>=AVERAGE_QUAL_THRESHOLD_3End && getRatioBaseA(seq_data)<ARTIFACTS_BASE_A_THRESHOLD)
-					if(containUnknownBase(seq_data)==NO && calcAverQual5End(qual_data)>=AVERAGE_QUAL_THRESHOLD_5End && qualSatisfied(qual_data)==YES && calcAverQual3End(qual_data)>=AVERAGE_QUAL_THRESHOLD_3End && getRatioBaseA(seq_data)<ARTIFACTS_BASE_A_THRESHOLD)
+					if(readBuf[j][i].len>=readLen && containUnknownBase(seq_data)==NO && calcAverQual5End(qual_data)>=AVERAGE_QUAL_THRESHOLD_5End && qualSatisfied(qual_data)==YES && calcAverQual3End(qual_data)>=AVERAGE_QUAL_THRESHOLD_3End && getRatioBaseA(seq_data)<ARTIFACTS_BASE_A_THRESHOLD)
 					{ //不包含‘N’, 并且相应碱基的平均质量大于15
 
 						//add the read
@@ -2091,6 +2204,16 @@ graphtype *ReadDataFileByPEFastqSeparate(char **readsFileNames, int readsFileNum
 
 					}
 					readID ++;
+				}
+
+				// update the processing percentage
+				if((int)((double)(readID-1)/totalReadNum*100) > percent)
+				{
+					percent = (int)((double)(readID-1)/totalReadNum*100);
+					printf("%d%%", percent);
+					if(percent%10==0) printf("\n");
+					else printf("\t");
+					fflush(stdout);
 				}
 			}
 		}
@@ -2121,12 +2244,15 @@ graphtype *ReadDataFileByPEFastqSeparate(char **readsFileNames, int readsFileNum
  */
 graphtype *ReadDataFileByPEFastaInterleaved(char **readsFileNames, int readsFileNum, graphtype *graph)
 {
-	int i, pairedID, tmpFileID;
+	int i, pairedID, tmpFileID, percent;
 	uint64_t readnum;  //read number
 	char ch, seq_data[2][5000]; // read sequence, read quality data which is encoded in ASCII
 	FILE* srcfp;
 
+	printf("Filling reads information ...\n");
+
 	readnum = 0;  //read number
+	percent = 0;
 
 	for(tmpFileID=0; tmpFileID<readsFileNum; tmpFileID++)
 	{
@@ -2138,7 +2264,7 @@ graphtype *ReadDataFileByPEFastaInterleaved(char **readsFileNames, int readsFile
 			return NULL;
 		}else
 		{
-			printf("Data File [%s] opened ok!\n", readsFileNames[tmpFileID]);
+			//printf("Data File [%s] opened ok!\n", readsFileNames[tmpFileID]);
 		}
 
 		pairedID = 0;
@@ -2160,7 +2286,7 @@ graphtype *ReadDataFileByPEFastaInterleaved(char **readsFileNames, int readsFile
 			readnum ++;
 
 			//printf("len = %d, %s\n", len, seq_data);
-			if(containUnknownBase(seq_data[pairedID])==NO && getRatioBaseA(seq_data[pairedID])<ARTIFACTS_BASE_A_THRESHOLD)
+			if(i>=readLen && containUnknownBase(seq_data[pairedID])==NO && getRatioBaseA(seq_data[pairedID])<ARTIFACTS_BASE_A_THRESHOLD)
 			{ //不包含‘N’, 并且相应碱基的平均质量大于15
 
 				//add the read
@@ -2178,6 +2304,15 @@ graphtype *ReadDataFileByPEFastaInterleaved(char **readsFileNames, int readsFile
 			else
 				pairedID ++;
 
+			// update the processing percentage
+			if((int)((double)readnum/totalReadNum*100) > percent)
+			{
+				percent = (int)((double)readnum/totalReadNum*100);
+				printf("%d%%", percent);
+				if(percent%10==0) printf("\n");
+				else printf("\t");
+				fflush(stdout);
+			}
 		}
 
 		fclose(srcfp);
@@ -2194,12 +2329,15 @@ graphtype *ReadDataFileByPEFastaInterleaved(char **readsFileNames, int readsFile
  */
 graphtype *ReadDataFileByPEFastqInterleaved(char **readsFileNames, int readsFileNum, graphtype *graph)
 {
-	int i, line_index, pairedID, tmpFileID;
+	int i, tmpLen, line_index, pairedID, tmpFileID, percent;
 	uint64_t readnum;  //read number
 	char ch, seq_data[2][5000], qual_data[2][5000]; // read sequence, read quality data which is encoded in ASCII
 	FILE* srcfp;
 
+	printf("Filling reads information ...\n");
+
 	readnum = 0;  //read number
+	percent = 0;
 
 	for(tmpFileID=0; tmpFileID<readsFileNum; tmpFileID++)
 	{
@@ -2211,7 +2349,7 @@ graphtype *ReadDataFileByPEFastqInterleaved(char **readsFileNames, int readsFile
 			return NULL;
 		}else
 		{
-			printf("Data File [%s] opened ok!\n", readsFileNames[tmpFileID]);
+			//printf("Data File [%s] opened ok!\n", readsFileNames[tmpFileID]);
 		}
 
 		pairedID = 0;
@@ -2228,15 +2366,15 @@ graphtype *ReadDataFileByPEFastqInterleaved(char **readsFileNames, int readsFile
 				}
 			}else if(line_index==1)  //the sequence line
 			{
-				i = 0;
+				tmpLen = 0;
 				ch = fgetc(srcfp);
 				while(ch!='\n')
 				{
-					if(i<readLen)
-						seq_data[pairedID][i++] = ch;
+					if(tmpLen<readLen)
+						seq_data[pairedID][tmpLen++] = ch;
 					ch = fgetc(srcfp);
 				}
-				seq_data[pairedID][i] = '\0';
+				seq_data[pairedID][tmpLen] = '\0';
 			}else if(line_index==2)  //the sequence name line
 			{
 				ch = fgetc(srcfp);
@@ -2262,9 +2400,11 @@ graphtype *ReadDataFileByPEFastqInterleaved(char **readsFileNames, int readsFile
 			{
 				readnum ++;
 
-				//printf("len = %d, %s\n", len, seq_data);
+//				if(readnum%100000==0 || readnum>43426000)
+//					printf("readnum= %lu\n", readnum);
+
 				//if(contianUnknownBase(seq_data)==NO && calcAverQual5End(qual_data)>=AVERAGE_QUAL_THRESHOLD_5End && calcAverQual3End(qual_data)>=AVERAGE_QUAL_THRESHOLD_3End && getRatioBaseA(seq_data)<ARTIFACTS_BASE_A_THRESHOLD)
-				if(containUnknownBase(seq_data[pairedID])==NO && calcAverQual5End(qual_data[pairedID])>=AVERAGE_QUAL_THRESHOLD_5End && qualSatisfied(qual_data[pairedID])==YES && calcAverQual3End(qual_data[pairedID])>=AVERAGE_QUAL_THRESHOLD_3End && getRatioBaseA(seq_data[pairedID])<ARTIFACTS_BASE_A_THRESHOLD)
+				if(tmpLen>=readLen && containUnknownBase(seq_data[pairedID])==NO && calcAverQual5End(qual_data[pairedID])>=AVERAGE_QUAL_THRESHOLD_5End && qualSatisfied(qual_data[pairedID])==YES && calcAverQual3End(qual_data[pairedID])>=AVERAGE_QUAL_THRESHOLD_3End && getRatioBaseA(seq_data[pairedID])<ARTIFACTS_BASE_A_THRESHOLD)
 				{ //不包含‘N’, 并且相应碱基的平均质量大于15
 
 					//add the read
@@ -2283,6 +2423,16 @@ graphtype *ReadDataFileByPEFastqInterleaved(char **readsFileNames, int readsFile
 					pairedID ++;
 
 				line_index = 0;
+
+				// update the processing percentage
+				if((int)((double)readnum/totalReadNum*100) > percent)
+				{
+					percent = (int)((double)readnum/totalReadNum*100);
+					printf("%d%%", percent);
+					if(percent%10==0) printf("\n");
+					else printf("\t");
+					fflush(stdout);
+				}
 			}
 		}
 
@@ -2461,7 +2611,7 @@ short countKmer(uint64_t hashcode, uint64_t *kmerSeqInt, graphtype *graph)
 		graph->pkmers[ hashcode ] = kmer;
 
 		//countMemory += sizeof( kmertype );
-		newKmerNum ++;
+		totalKmerNum ++;
 	}else
 	{ //该kmer已经存在, 则只需更新数量
 		kmer ->arraysize ++;
@@ -2796,7 +2946,7 @@ inline kmertype *getKmerByHash(uint64_t hashvalue, uint64_t *kmerSeqInt, graphty
  *  @return:
  *  	If identical, return YES; otherwise, return NO.
  */
-int identicalKmerSeq(uint64_t *kmerSeqInt1, uint64_t *kmerSeqInt2)
+short identicalKmerSeq(uint64_t *kmerSeqInt1, uint64_t *kmerSeqInt2)
 {
 	int i;
 	for(i=0; i<entriesPerKmer; i++)
@@ -2951,9 +3101,9 @@ kmertype *getReverseKmer(uint64_t *kmerSeqIntRev, uint64_t *kmerSeqInt, graphtyp
 
 
 /**
- *  Output the graph to file.
+ *  Output the k-mer hash table to file.
  *   File format:
- *   	(1) arraySize1 for kmer array, arraySize for ridposArray, and readLen, kmerSize, hashtableSize;
+ *   	(1) totalKmerNum, totalRidposNum, readLen, kmerSize, hashtableSize, pairedMode, totalReadNum, validReadNum;
  *   	(2) kmerArray;
  *   	(3) ridposArray.
  *   	(4) kmerseqArray.
@@ -2961,18 +3111,20 @@ kmertype *getReverseKmer(uint64_t *kmerSeqIntRev, uint64_t *kmerSeqInt, graphtyp
  *  @return:
  *  	If succeeds, return SUCCESSFUL; otherwise, return FAILED.
  */
-int outputGraphToFile(char *graphFile, graphtype *graph)
+short outputGraphToFile(char *graphFile, graphtype *graph)
 {
+	printf("Begin to output the k-mer hash table to file ...\n");
+
 	struct kmerArrayNode{
-		uint64_t hashCode;
-		uint64_t arraysize;
+		uint32_t hashCode;
+		uint32_t arraysize;
 	};
 	struct ridposArrayNode{
 		uint64_t rid:48;
 		uint64_t rpos:16;
 	};
 
-	uint64_t kmerArraySize, ridposArraySize, tmp[6];
+	uint64_t tmp[8];
 	uint64_t i, j, rowsNumKmerArray, rowsNumRidposArray, itemNumKmerSeq;
 	struct kmerArrayNode kmerArray;
 	struct ridposArrayNode ridposArray;
@@ -2987,27 +3139,17 @@ int outputGraphToFile(char *graphFile, graphtype *graph)
 		return FAILED;
 	}
 
-	kmerArraySize = ridposArraySize = 0;
-	for(i=0; i<hashTableSize; i++)
-	{
-		kmer = graph->pkmers[i];
-		while(kmer)
-		{
-			kmerArraySize ++;
-			ridposArraySize += kmer->arraysize;
-
-			kmer = kmer->next;
-		}
-	}
-
-	tmp[0] = kmerArraySize;
-	tmp[1] = ridposArraySize;
+	tmp[0] = totalKmerNum;
+	tmp[1] = totalRidposNum;
 	tmp[2] = readLen;
 	tmp[3] = kmerSize;
 	tmp[4] = hashTableSize;
 	tmp[5] = pairedMode;
+	tmp[6] = totalReadNum;
+	tmp[7] = validReadNum;
 
-	if(fwrite(tmp, sizeof(uint64_t), 6, fpGraph)!=6)
+
+	if(fwrite(tmp, sizeof(uint64_t), 8, fpGraph)!=8)
 	{
 		printf("line=%d, In %s(), fwrite Error!\n", __LINE__, __func__);
 		return FAILED;
@@ -3075,9 +3217,9 @@ int outputGraphToFile(char *graphFile, graphtype *graph)
 	}
 
 	// ############################ Debug information ##############################
-	if(kmerArraySize!=rowsNumKmerArray)
+	if(totalKmerNum!=rowsNumKmerArray)
 	{
-		printf("line=%d, In %s(),kmerArraySize=%lu != rowsNumKmerArray=%lu. Error\n", __LINE__, __func__, kmerArraySize, rowsNumKmerArray);
+		printf("line=%d, In %s(),kmerArraySize=%lu != rowsNumKmerArray=%lu. Error\n", __LINE__, __func__, totalKmerNum, rowsNumKmerArray);
 		return FAILED;
 	}
 	if(itemNumKmerSeq!=rowsNumKmerArray)
@@ -3085,9 +3227,9 @@ int outputGraphToFile(char *graphFile, graphtype *graph)
 		printf("line=%d, In %s(),itemNumKmerSeq=%lu != rowsNumKmerArray=%lu. Error\n", __LINE__, __func__, itemNumKmerSeq, rowsNumKmerArray);
 		return FAILED;
 	}
-	if(ridposArraySize!=rowsNumRidposArray)
+	if(totalRidposNum!=rowsNumRidposArray)
 	{
-		printf("line=%d, In %s(),ridposArraySize=%lu != rowsNumRidposArray=%lu. Error\n", __LINE__, __func__, ridposArraySize, rowsNumRidposArray);
+		printf("line=%d, In %s(),ridposArraySize=%lu != rowsNumRidposArray=%lu. Error\n", __LINE__, __func__, totalRidposNum, rowsNumRidposArray);
 		return FAILED;
 	}
 	// ############################ Debug information ##############################
@@ -3095,13 +3237,15 @@ int outputGraphToFile(char *graphFile, graphtype *graph)
 	fclose(fpGraph);
 	fpGraph = NULL;
 
+	printf("End outputting the k-mer hash table to file ...\n");
+
 	return SUCCESSFUL;
 }
 
 /**
  *  Load the graph to memory.
  *   File format:
- *   	(1) arraySize1 for kmer array, arraySize for ridposArray, and readLen, kmerSize, hashtableSize, pairedMode;
+ *   	(1) totalKmerNum, totalRidposNum, readLen, kmerSize, hashtableSize, pairedMode, totalReadNum, validReadNum;
  *   	(2) kmerArray;
  *   	(3) ridposArray.
  *   	(4) kmerseqArray.
@@ -3109,11 +3253,13 @@ int outputGraphToFile(char *graphFile, graphtype *graph)
  *  @return:
  *  	If succeeds, return SUCCESSFUL; otherwise, return FAILED.
  */
-int loadGraph(graphtype **graph, char *graphFile)
+short loadGraph(graphtype **graph, char *graphFile)
 {
+	printf("\nBegin loading the k-mer hash table ...\n");
+
 	struct kmerArrayNode{
-		uint64_t hashCode;
-		uint64_t arraysize;
+		uint32_t hashCode;
+		uint32_t arraysize;
 	};
 	struct ridposArrayNode{
 		uint64_t rid:48;
@@ -3121,7 +3267,7 @@ int loadGraph(graphtype **graph, char *graphFile)
 	};
 
 	FILE *fpGraph;
-	uint64_t kmerArraySize, ridposArraySize, tmp[6], hashcode, arraysize;
+	uint64_t tmp[8], hashcode, arraysize;
 	uint64_t preHashCode;
 	kmertype *preKmer;
 	uint64_t i, j;
@@ -3129,8 +3275,6 @@ int loadGraph(graphtype **graph, char *graphFile)
 	struct ridposArrayNode ridposArray;
 	kmertype *kmer;
 	ridpostype *ridpos;
-
-	printf("Begin loading the graph ...\n");
 
 	fpGraph = fopen(graphFile, "rb");
 	if(fpGraph==NULL)
@@ -3140,18 +3284,20 @@ int loadGraph(graphtype **graph, char *graphFile)
 	}
 
 	// get the item number of the kmer array and ridpos array, respectively
-	if(fread(tmp, sizeof(uint64_t), 6, fpGraph)!=6)
+	if(fread(tmp, sizeof(uint64_t), 8, fpGraph)!=8)
 	{
 		printf("line=%d, In %s(), fread Error!\n", __LINE__, __func__);
 		return FAILED;
 	}
 
-	kmerArraySize = tmp[0];
-	ridposArraySize = tmp[1];
+	totalKmerNum = tmp[0];
+	totalRidposNum = tmp[1];
 	readLen = tmp[2];
 	kmerSize = tmp[3];
 	hashTableSize = tmp[4];
 	pairedMode = tmp[5];
+	totalReadNum = tmp[6];
+	validReadNum = tmp[7];
 
 	// initialize the graph
 	*graph = initgraph();
@@ -3164,7 +3310,7 @@ int loadGraph(graphtype **graph, char *graphFile)
 	// fill the data
 	preHashCode = -1;
 	preKmer = NULL;
-	for(i=0; i<kmerArraySize; i++)
+	for(i=0; i<totalKmerNum; i++)
 	{
 		if(fread(&kmerArray, sizeof(struct kmerArrayNode), 1, fpGraph)!=1)
 		{
@@ -3213,7 +3359,7 @@ int loadGraph(graphtype **graph, char *graphFile)
 			{
 				if(fread(&ridposArray, sizeof(struct ridposArrayNode), 1, fpGraph)!=1)
 				{
-					printf("line=%d, In %s(), fread Error!\n", __LINE__, __func__);
+					printf("line=%d, In %s(), i=%lu, j=%lu, fread Error!\n", __LINE__, __func__, i, j);
 					return FAILED;
 				}
 
@@ -3253,7 +3399,7 @@ int loadGraph(graphtype **graph, char *graphFile)
 	fclose(fpGraph);
 	fpGraph = NULL;
 
-	printf("End loading the graph.\n");
+	printf("End loading the k-mer hash table.\n");
 
 	return SUCCESSFUL;
 }
@@ -3266,7 +3412,7 @@ int loadGraph(graphtype **graph, char *graphFile)
 short GlobalParasFromGraph(int *readLenPara, int *kmerSizePara, uint64_t *hashTableSizePara, int *pairedModePara, char *graphFileName)
 {
 	FILE *fpGraph;
-	uint64_t tmp[6];
+	uint64_t tmp[8];
 
 	fpGraph = fopen(graphFileName, "rb");
 	if(fpGraph==NULL)
@@ -3276,7 +3422,7 @@ short GlobalParasFromGraph(int *readLenPara, int *kmerSizePara, uint64_t *hashTa
 	}
 
 	// get the item number of the kmer array and ridpos array, respectively
-	if(fread(tmp, sizeof(uint64_t), 6, fpGraph)!=6)
+	if(fread(tmp, sizeof(uint64_t), 8, fpGraph)!=8)
 	{
 		printf("line=%d, In %s(), fread Error!\n", __LINE__, __func__);
 		return FAILED;
@@ -3286,6 +3432,7 @@ short GlobalParasFromGraph(int *readLenPara, int *kmerSizePara, uint64_t *hashTa
 	*kmerSizePara = tmp[3];
 	*hashTableSizePara = tmp[4];
 	*pairedModePara = tmp[5];
+
 
 	fclose(fpGraph);
 	fpGraph = NULL;
@@ -3298,7 +3445,7 @@ short GlobalParasFromGraph(int *readLenPara, int *kmerSizePara, uint64_t *hashTa
  *  @return:
  *  	If succeeds, return SUCCESFUL; otherwise, return FAILED.
  */
-int resetGraph(graphtype *graph)
+short resetGraph(graphtype *graph)
 {
 	int64_t i, j, arraysize;
 	kmertype *kmer;

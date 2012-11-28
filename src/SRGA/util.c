@@ -14,7 +14,7 @@
  *  @return:
  *  	If succeeds, return SUCCESSFUL; otherwise, return FAILED.
  */
-int outputContig(contigtype *contighead)
+short outputContig(contigtype *contighead)
 {
 	contigtype *contig;
 	successRead_t *ridposorientation = NULL;
@@ -53,7 +53,7 @@ int outputContig(contigtype *contighead)
  *  @return:
  *  	If succeeds, return SUCCESSFUL; otherwise, return FAILED.
  */
-int outputContigEnd5(contigtype *contighead, int nodeNum)
+short outputContigEnd5(contigtype *contighead, int nodeNum)
 {
 	contigtype *contig;
 	successRead_t *ridposorientation = NULL;
@@ -98,7 +98,7 @@ int outputContigEnd5(contigtype *contighead, int nodeNum)
  *  @return:
  *  	If succeeds, return SUCCESSFUL; otherwise, return FAILED.
  */
-int outputContigEnd3(contigtype *contighead, int nodeNum)
+short outputContigEnd3(contigtype *contighead, int nodeNum)
 {
 	contigtype *contig;
 	successRead_t *ridposorientation = NULL;
@@ -186,6 +186,65 @@ short outputUndelKmerpos(graphtype *graph)
 			}
 		}
 	}
+	printf("checking undelKmerpos finished, the count=%lu\n", count);
+
+	return SUCCESSFUL;
+}
+
+/*
+ * Output the remained Kmer and its multiplicity and arraySize.
+ *  @return:
+ *  	If succeeds, return SUCCESSFUL; otherwise, return FAILED.
+ */
+short outputRemainedKmers(graphtype *graph)
+{
+	FILE *fpRemainedKmer;
+	int64_t i, count;
+	int posNum, j;
+	kmertype *kmer;
+	ridpostype *ridpostable;
+
+	printf("Begin outputting  remained k-mers:\n");
+
+	fpRemainedKmer = fopen("../remainedKmers.txt", "w");
+	if(fpRemainedKmer==NULL)
+	{
+		printf("line=%d, In %s(), cannot open file [../remainedKmers.txt], error!\n", __LINE__, __func__);
+		return FAILED;
+	}
+
+
+	count = 0;
+	for(i=0; i<hashTableSize; i++)
+	{
+		kmer = graph->pkmers[i];  //取得kmer
+		while(kmer)
+		{
+			if(kmer->multiplicity>0)
+				fprintf(fpRemainedKmer, "%ld\t\t%u\t%u\n", i, kmer->multiplicity, kmer->arraysize);
+
+//			posNum = kmer->arraysize;
+//			ridpostable = kmer->ppos;
+//			if(kmer->multiplicity>0)
+//			{
+//				for(j=0; j<posNum; j++)
+//				{
+//					if(ridpostable->delsign==0)  //未被删除，则输出该rid和pos
+//					{
+//						//printf("(%d,%d) ", ridpostable->rid, ridpostable->pos);
+//						count++;
+//					}
+//					ridpostable++;
+//				}
+//				//printf("\n");
+//			}
+
+			kmer = kmer->next;
+		}
+	}
+
+	fclose(fpRemainedKmer);
+
 	printf("checking undelKmerpos finished, the count=%lu\n", count);
 
 	return SUCCESSFUL;
@@ -439,7 +498,7 @@ void outputSuccessReads(successRead_t *successReadArray, int successReadNum)
 }
 
 
-int checkGraph(graphtype *graph)
+short checkGraph(graphtype *graph)
 {
 	printf("Begin checking De Bruijn graph, please wait ...\n");
 
@@ -482,18 +541,23 @@ int checkGraph(graphtype *graph)
 }
 
 
-int outputContigToTmpFile(contigtype *contighead, int outFileType)
+short outputContigToTmpFile(contigtype *contighead, int outFileType)
 {
 	FILE *fpContigTmp;
 	contigtype *contig;
 	successRead_t *ridposorientation = NULL;
 	int i, contigNodeNum, num;
-	char tmp_base;
+	char tmp_base, fileName[256];
 
-	fpContigTmp = fopen("../tmpContig.fa", "w");
+	if(outFileType==BASE_TYPE_FASTA_CONTIG_FILE)
+		strcpy(fileName, "../tmpContig.fa");
+	else
+		strcpy(fileName, "../tmpContig_hanging.fa");
+
+	fpContigTmp = fopen(fileName, "w");
 	if(fpContigTmp==NULL)
 	{
-		printf("line=%d, In %s(), can not open the tmpContig.fa.\n", __LINE__, __func__);
+		printf("line=%d, In %s(), can not open file [%s].\n", __LINE__, __func__, fileName);
 		return FAILED;
 	}
 
@@ -566,7 +630,7 @@ int outputContigToTmpFile(contigtype *contighead, int outFileType)
 }
 
 
-int outputPEHashArray(PERead_t **PEHashArray)
+short outputPEHashArray(PERead_t **PEHashArray)
 {
 	int i, totalReadNum;
 	PERead_t *tmpRead;
@@ -592,7 +656,7 @@ int outputPEHashArray(PERead_t **PEHashArray)
 }
 
 
-int checkReadListArr(readList_t *readListArray, int64_t itemNumInReadListArray)
+short checkReadListArr(readList_t *readListArray, int64_t itemNumInReadListArray)
 {
 	int64_t i;
 
@@ -609,7 +673,7 @@ int checkReadListArr(readList_t *readListArray, int64_t itemNumInReadListArray)
 }
 
 
-int outputReadListToFile(char *readListFile, readList_t *readListArray, readPos_t *readPosArray, int64_t itemNumInReadListArray)
+short outputReadListToFile(char *readListFile, readList_t *readListArray, readPos_t *readPosArray, int64_t itemNumInReadListArray)
 {
 	uint64_t i, j, matchNum, readID;
 	FILE *fpReadList;
@@ -640,7 +704,7 @@ int outputReadListToFile(char *readListFile, readList_t *readListArray, readPos_
 }
 
 
-int outputMatedReadsInReadListToFile(char *readListFile, readList_t *readListArray, readPos_t *readPosArray, int64_t itemNumInReadListArray)
+short outputMatedReadsInReadListToFile(char *readListFile, readList_t *readListArray, readPos_t *readPosArray, int64_t itemNumInReadListArray)
 {
 	uint64_t i, j, matchNum, readID;
 	FILE *fpReadList;
@@ -691,7 +755,7 @@ int outputMatedReadsInReadListToFile(char *readListFile, readList_t *readListArr
 }
 
 
-int convertFragmentSizeFileInText(const char *fragmentSizeFile)
+short convertFragmentSizeFileInText(const char *fragmentSizeFile)
 {
 	int32_t fragmentSize;
 	char fileName[256];
@@ -763,6 +827,25 @@ short outputReadPosInGraph(int64_t readID, graphtype *graph)
 
 			kmer = kmer->next;
 		}
+	}
+
+	return SUCCESSFUL;
+}
+
+/**
+ * Output items in navigation occurrence queue.
+ *  @return:
+ *  	If succeeds, return SUCCESSFUL; otherwise, return FAILED.
+ */
+short outputNaviOccQueue(double *naviOccQueuePara, int itemNumNaviOccQueuePara, int frontRowNaviOccQueuePara)
+{
+	int i, j;
+
+	j = frontRowNaviOccQueuePara;
+	for(i=0; i<itemNumNaviOccQueuePara; i++)
+	{
+		printf("naviOccQueue[%d]: %.2f\n", i, naviOccQueuePara[j]);
+		j = (j+1) % maxItemNumNaviOccQueue;
 	}
 
 	return SUCCESSFUL;

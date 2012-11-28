@@ -1,15 +1,13 @@
 #ifndef CONSTANTS_H_INCLUDED
 #define CONSTANTS_H_INCLUDED 1
 
-#define DEBUG_OUTPUT 0
-#define DEBUG_PRINTF 0
-
 #define __USE_FILE_OFFSET64
 #define __USE_LARGEFILE64
 //#define _FILE_OFFSET_BITS 64
 
-#define VERSION_STR						("v0.3.05.03")
-#define RELEASE_DATE_STR				("Sep 7, 2012")
+
+#define VERSION_STR						("v0.3.06.16")
+#define RELEASE_DATE_STR				("Nov 28, 2012")
 
 #ifndef NULL
 #define NULL ((void *)0)
@@ -22,29 +20,52 @@
 #define YES 1
 #define NO 0
 
+// Debug output configurations
+#define DEBUG_PARA_PRINT				(NO)
+#define DEBUG_OUTPUT					(NO)
+#define DEBUG_CONTIG_CHECK				(NO)
+#define DEBUG_EST_OUTPUT 				(NO)
+#define DEBUG_EST_CONTIG_CHECK			(NO)
+#define DELETE_TMP_FILES				(YES)
+#define HANGING_CONTIG_OUT_FLAG			(NO)
+
+#define TRIM_READ_LEN_FLAG				(NO)
+
 /* the Strand flag */
 #define ORIENTATION_PLUS				'+'
 #define ORIENTATION_MINUS				'-'
 
 #define DEFAULT_KMER_SIZE				21
-#define LONG_KMER_SIZE_FACTOR			0.7f
+#define LONG_KMER_SIZE_FACTOR			0.8f  // ========================
+//#define LONG_KMER_SIZE_FACTOR			0.7f
 
 #define HASH_TABLE_SIZE					(157286611LLU)
+//#define HASH_TABLE_SIZE					(15728681LLU)
 
-#define TABLE_SIZE_ASSEMBLINGREAD		10000
-#define TABLE_SIZE_RIDPOSORIENTATION 	10000
-#define MAX_DECISION_TABLE_SIZE_HTRES	10000
+#define TABLE_SIZE_ASSEMBLINGREAD		50000
+#define TABLE_SIZE_RIDPOSORIENTATION 	50000
+#define MAX_DECISION_TABLE_SIZE_HTRES	50000
 
 #define FIRST_ROUND_ASSEMBLY			1		// the first assembly round
 #define SECOND_ROUND_ASSEMBLY			2		// the second assembly round
 
-#define FIRSTKMER_FACTOR 				5
+//#define FIRSTKMER_FACTOR 				5
+#define FIRSTKMER_FACTOR 				15
+
+#define LOWER_BOUND_FACTOR_CYCLE1		0.5f
+#define UPPER_BOUND_FACTOR_CYCLE1		30
+#define UPPER_BOUND_FACTOR_CYCLE2		200
+//#define LOWER_BOUND_FACTOR_CYCLE3		0.2
+#define MIN_LOWER_BOUND					6
+#define MIN_LOWER_BOUND_RESCUE			3
 
 #define FIRSTKMER_SUBTRACT_THRESHOLD 	0.9f
 
 //#define AVERAGE_QUAL_THRESHOLD_3End 	2.0f
-#define AVERAGE_QUAL_THRESHOLD_3End 	5.0f
-#define AVERAGE_QUAL_THRESHOLD_5End 	20.0f
+//#define AVERAGE_QUAL_THRESHOLD_3End 	5.0f	//==========================
+#define AVERAGE_QUAL_THRESHOLD_3End 	3.0f
+//#define AVERAGE_QUAL_THRESHOLD_5End 	20.0f	//==========================
+#define AVERAGE_QUAL_THRESHOLD_5End 	10.0f
 #define SINGLE_QUAL_THRESHOLD			2
 //#define SINGLE_QUAL_THRESHOLD			3
 
@@ -52,6 +73,8 @@
 
 #define QUAL_BASE_NUM_3End_FACTOR		0.2f
 #define ERROR_REGION_LEN_3End_FACTOR	0.1f
+//#define ERROR_REGION_LEN_3End_FACTOR	0.07f
+//#define ERROR_REGION_LEN_3End_FACTOR	0.15f
 
 //#define VALID_OCC_RATIO					0.05   //==================================
 //#define MAX_SECOND_OCC_FACTOR			2  //==================================
@@ -68,7 +91,8 @@
 //#define SECOND_FIRST_OCC_RATIO			0.7f // best
 #define SECOND_FIRST_OCC_RATIO			0.8f
 //#define SECOND_FIRST_OCC_FAILED_RATIO	0.3f
-#define SECOND_FIRST_OCC_FAILED_RATIO	0.5f
+//#define SECOND_FIRST_OCC_FAILED_RATIO	0.5f
+#define SECOND_FIRST_OCC_FAILED_RATIO	0.7f
 
 #define CONTIG_LEN_THRESHOLD			100
 
@@ -83,10 +107,11 @@
 #define MIN_KMER_OCC_FACTOR				0.1f
 //#define MIN_KMER_OCC_THRES				3    //==================================
 #define MIN_KMER_OCC_THRES				2
+#define MAX_KMER_OCC_THRES				5
 
 //#define MIN_LONG_KMER_OCC_THRES			8  //==================================
 #define MIN_LONG_KMER_OCC_THRES			6
-//#define MIN_LONG_KMER_OCC_THRES			8
+//#define MIN_LONG_KMER_OCC_THRES			4
 //#define LONG_KMER_OCC_FACTOR			2   //==================================
 //#define LONG_KMER_OCC_FACTOR			2.5f
 #define LONG_KMER_OCC_FACTOR			2.5f
@@ -98,6 +123,7 @@
 
 #define NAVI_PE_FLAG					1
 #define NAVI_SE_FLAG					2
+#define NAVI_MIX_FLAG					3
 
 //#define MAX_ITEM_NUM_NAVI_OCC_QUEUE		8
 
@@ -128,6 +154,9 @@
 #define TOTAL_CONTIG_LEN_EST_THRES		200000
 #define MIN_CONTIG_LEN_EST				1000
 #define MIN_CONTIG_LEN_EST_FACTOR		5.0f
+#define TOTAL_READS_NUM_EST_THRES		100000
+
+#define MAX_INSERT_SIZE_THRES			5000
 
 #define MAX_INSERT_SIZE_FACTOR			5.0f
 #define SDEV_FACTOR						3.0f  //===================================
@@ -139,7 +168,11 @@
 //++++++++++++++++++++++++++++++++++++
 //#define REG_LEN_READS_NUM_REG_FACTOR			1.3f
 //#define REG_LEN_READS_NUM_REG_FACTOR			2.5f
-#define REG_LEN_READS_NUM_REG_FACTOR			1.5f
+//#define REG_LEN_READS_NUM_REG_FACTOR			1.5f // =============================
+//#define REG_LEN_READS_NUM_REG_FACTOR			0.5f
+#define REG_LEN_READS_NUM_REG_FACTOR			1.0f
+//#define REG_LEN_READS_NUM_REG_FACTOR			0.9f
+//#define REG_LEN_READS_NUM_REG_FACTOR			0.8f
 //#define MAX_READS_NUM_RATIO_THRES				2.0f   //===================================
 //#define MAX_READS_NUM_RATIO_THRES				5.0f
 #define MAX_READS_NUM_RATIO_THRES				20.0f
@@ -154,8 +187,9 @@
 //#define OCCS_NUM_SE_FAILED_PE_FACTOR			4.5f
 //#define MAX_OCC_NUM_FAILED_PE_THRES				51.0f
 //#define MAX_OCC_NUM_FAILED_PE_THRES				60.0f
-//#define MAX_OCC_NUM_FAILED_PE_THRES				100.0f
-#define MAX_OCC_NUM_FAILED_PE_THRES				100.0f
+#define MAX_OCC_NUM_FAILED_PE_THRES				100.0f  //============================
+//#define MAX_OCC_NUM_FAILED_PE_THRES				200.0f
+//#define MAX_OCC_NUM_FAILED_PE_THRES				300.0f
 
 #define MAX_NAVI_NUM_SE_THRES					2  // === not used ===
 

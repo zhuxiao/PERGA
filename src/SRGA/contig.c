@@ -8,7 +8,7 @@
  *  @return:
  *  	If succeeds, return SUCCESSFUL; otherwise, return FAILED.
  */
-short buildContigs(char *contigFile, char *graphFile)
+short buildContigs(char *contigFile)
 {
 	printf("\n============= Begin building contigs, please wait ... =============\n");
 
@@ -19,23 +19,8 @@ short buildContigs(char *contigFile, char *graphFile)
 	char hangingFile[256];
 	int i, turnContigIndex;
 	int64_t localContigID;
-	double averOccNumNaviOccQueue;
-	int lowOccNum;
 
-	// load the graph to memory
-	if(loadGraph(&deBruijnGraph, graphFile)==FAILED)
-	{
-		printf("line=%d, In %s(), cannot load graph to memory, error!\n", __LINE__, __func__);
-		return FAILED;
-	}
-
-	// ############################ Debug information ##############################
-	//if(checkGraph(deBruijnGraph)==FAILED)
-	//{
-	//	printf("line=%d, In %s(), checking graph error!\n", __LINE__, __func__);
-	//	return FAILED;
-	//}
-	// ############################ Debug information ##############################
+	int percent, percentNum, tmp_gapSize;
 
 	initFirstKmerThreshold();
 	if(initMemory()==FAILED)
@@ -53,9 +38,6 @@ short buildContigs(char *contigFile, char *graphFile)
 			printf("line=%d, In %s(), cannot estimate the insert size and standard deviation of fragment library, error!\n", __LINE__, __func__);
 			return FAILED;
 		}
-		// ############################ Debug information ##############################
-		//return SUCCESSFUL;
-		// ############################ Debug information ##############################
 
 		if(initPEHashParas()==FAILED)
 		{
@@ -84,409 +66,427 @@ short buildContigs(char *contigFile, char *graphFile)
 
 	basesNum = 0; //拼接的所有contigs的碱基的总和
 	localContigID = 0;
-
-	kmerIndex = 0;
+	percent = 0;
+	percentNum = 0;
+	successReadNum = 0;
 	contigsNum = 0;
-	while(kmerIndex < hashTableSize)
+
+	for(assemblyCycle=1; assemblyCycle<=2; assemblyCycle++)
 	{
-		contighead = NULL;
-		contigtail = NULL;
-		contig36 = NULL;
-		contigIndex = 1;
-		lastseq36[0] = '\0';
-		itemNumDecisionTable = 0;
-		successContig = NULL;
-		assemblyRound = FIRST_ROUND_ASSEMBLY;  //第1轮拼接
-		lockedReadsNum = 0; //初始化清空锁定的reads数量
-		this_successReadNum = 0; //本次拼接中的成功reads数量置为0
-		readsNumInPEHashArr = 0;
-		regLenPEHash = 0;
-		turnContigIndex = 0;
-		allowedUpdatePEHashArrFlag = YES;
-		localContigID ++;
-
-
-		//取得拼接的首个kmers及其正向的碱基序列
-		if(getFirstKmers(&kmerIndex, &firstKmer)==FAILED)
+		if(initFirstKmerBounder(&lowerBoundFirstKmer, &upperBoundFirstKmer, assemblyCycle, averKmerOcc)==FAILED)
 		{
-			printf("line=%d, In %s(), cannot get first kmers, error!\n", __LINE__, __func__);
-			return FAILED;
-		}
-		if(kmerIndex>=hashTableSize)
-		{ //已经到达哈希表的尾部时, 则拼接结束
-			break;
-		}
-
-		// initialize the contig chain
-		if(initContig(&contighead, &contigtail)==FAILED)
-		{
-			printf("line=%d, In %s(), cannot initialize the contig nodes, error!\n", __LINE__, __func__);
-			return FAILED;
-		}
-		contigIndex = kmerSize;
-
-		// initialize the decision table
-		if(addFirstKmerToDecisionTable(kmers)==FAILED)
-		{
-			printf("line=%d, In %s(), cannot initialize the decision table, error!\n", __LINE__, __func__);
+			printf("line=%d, In %s(), cannot initialize the bounder for first k-mers, error!\n", __LINE__, __func__);
 			return FAILED;
 		}
 
-
-		//将kmer碱基添加进碱基数组
-		strcpy(lastseq36, getKmerBaseByInt(kmerSeqIntAssembly));
-
-		if(setEmptyNaviOccQueue(naviOccQueue, &itemNumNaviOccQueue, &frontRowNaviOccQueue, &rearRowNaviOccQueue)==FAILED)
+		kmerIndex = 0;
+		while(kmerIndex < hashTableSize)
 		{
-			printf("line=%d, In %s(), cannot initialize the empty navigation occurrence queue, error!\n", __LINE__, __func__);
-			return FAILED;
-		}
+			contighead = NULL;
+			contigtail = NULL;
+			contig36 = NULL;
+			contigIndex = 1;
+			lastseq36[0] = '\0';
+			itemNumDecisionTable = 0;
+			successContig = NULL;
+			assemblyRound = FIRST_ROUND_ASSEMBLY;  //第1轮拼接
+			lockedReadsNum = 0; //初始化清空锁定的reads数量
+			this_successReadNum = 0; //本次拼接中的成功reads数量置为0
+			readsNumInPEHashArr = 0;
+			regLenPEHash = 0;
+			turnContigIndex = 0;
+			allowedUpdatePEHashArrFlag = YES;
+			localContigID ++;
 
-		while(kmers[0]||kmers[1])
-		{
-			// ############################ Debug information ##############################
-//			if(localContigID==100 && contigIndex>=11860 && assemblyRound==FIRST_ROUND_ASSEMBLY)
-//			{
-//				printf("localContigID=%ld, contigID=%d, contigIndex=%d, assemblyRound=%d\n", localContigID, contigsNum+1, contigIndex, assemblyRound);
-//			}
-			// ############################ Debug information ##############################
-
-
-			// initialize or update the PE hash table
-			if(PEGivenType>NONE_PE_GIVEN_TYPE && contigIndex>=minContigLenUsingPE)
+			//取得拼接的首个kmers及其正向的碱基序列
+			if(getFirstKmers(&kmerIndex, &firstKmer)==FAILED)
 			{
-				if(updatePEHashTable(contigIndex, assemblyRound)==FAILED)
+				printf("line=%d, In %s(), cannot get first kmers, error!\n", __LINE__, __func__);
+				return FAILED;
+			}
+			if(kmerIndex>=hashTableSize)
+			{ //已经到达哈希表的尾部时, 则拼接结束
+				break;
+			}
+
+			// initialize the contig chain
+			if(initContig(&contighead, &contigtail)==FAILED)
+			{
+				printf("line=%d, In %s(), cannot initialize the contig nodes, error!\n", __LINE__, __func__);
+				return FAILED;
+			}
+			contigIndex = kmerSize;
+
+			// initialize the decision table
+			if(addFirstKmerToDecisionTable(kmers)==FAILED)
+			{
+				printf("line=%d, In %s(), cannot initialize the decision table, error!\n", __LINE__, __func__);
+				return FAILED;
+			}
+
+
+			//将kmer碱基添加进碱基数组
+			strcpy(lastseq36, getKmerBaseByInt(kmerSeqIntAssembly));
+
+			if(setEmptyNaviOccQueue(naviOccQueue, &itemNumNaviOccQueue, &frontRowNaviOccQueue, &rearRowNaviOccQueue)==FAILED)
+			{
+				printf("line=%d, In %s(), cannot initialize the empty navigation occurrence queue, error!\n", __LINE__, __func__);
+				return FAILED;
+			}
+
+			while(kmers[0]||kmers[1])
+			{
+#if (DEBUG_CONTIG_CHECK==YES)
+				// ############################ Debug information ##############################
+				if(localContigID==119 && contigIndex>=100 /*&& assemblyRound!=FIRST_ROUND_ASSEMBLY*/)
 				{
-					printf("line=%d, In %s(), localContigID=%ld, contigID=%d, contigIndex=%d, cannot update the PE hash table, error!\n", __LINE__, __func__, localContigID, contigsNum+1, contigIndex);
-					return FAILED;
+					printf("localContigID=%ld, contigID=%d, contigIndex=%d, assemblyRound=%d\n", localContigID, contigsNum+1, contigIndex, assemblyRound);
 				}
+				// ############################ Debug information ##############################
+#endif
 
-				// ########################### Debug information ########################
-				//if(assemblyRound==SECOND_ROUND_ASSEMBLY && contigIndex-hashRegRightContig->index<minContigLenUsingPE-1)
-				//{
-				//	printf("line=%d, In %s(), assemblyRound=%d, contigIndex=%d, hashRegRightContig->index=%d, error!\n", __LINE__, __func__, assemblyRound, contigIndex, hashRegRightContig->index);
-				//	return FAILED;
-				//}
-				// ########################### Debug information ########################
-
-				//取正反向kmer
-				if(readsNumInPEHashArr>=minReadsNumPEHashThres && regLenPEHash>=minRegLenUsingPE)
+				// initialize or update the PE hash table
+				if(PEGivenType>NONE_PE_GIVEN_TYPE && contigIndex>=minContigLenUsingPE)
 				{
-					if(getNextKmerByMix(contigIndex, assemblyRound)==FAILED)
+					if(updatePEHashTable(contigIndex, assemblyRound)==FAILED)
 					{
-						printf("line=%d, In %s(), localContigID=%ld, cannot get the next kmer by mix, error!\n", __LINE__, __func__, localContigID);
+						printf("line=%d, In %s(), localContigID=%ld, contigID=%d, contigIndex=%d, cannot update the PE hash table, error!\n", __LINE__, __func__, localContigID, contigsNum+1, contigIndex);
 						return FAILED;
+					}
+
+					// ########################### Debug information ########################
+					//if(assemblyRound==SECOND_ROUND_ASSEMBLY && contigIndex-hashRegRightContig->index<minContigLenUsingPE-1)
+					//{
+					//	printf("line=%d, In %s(), assemblyRound=%d, contigIndex=%d, hashRegRightContig->index=%d, error!\n", __LINE__, __func__, assemblyRound, contigIndex, hashRegRightContig->index);
+					//	return FAILED;
+					//}
+					// ########################### Debug information ########################
+
+					//取正反向kmer
+					//if(readsNumInPEHashArr>=minReadsNumPEHashThres && regLenPEHash>=minRegLenUsingPE)
+					if(readsNumInPEHashArr>0 && regLenPEHash>=minRegLenUsingPE)
+					{
+						if(getNextKmerByMix(contigIndex, assemblyRound)==FAILED)
+						{
+							printf("line=%d, In %s(), localContigID=%ld, cannot get the next kmer by mix, error!\n", __LINE__, __func__, localContigID);
+							return FAILED;
+						}
+					}else
+					{
+						navigationFlag = NAVI_SE_FLAG;
+						if(getNextKmerBySE(contigIndex)==FAILED)
+						{
+							printf("line=%d, In %s(), localContigID=%ld, cannot get next kmer, error!\n", __LINE__, __func__, localContigID);
+							return FAILED;
+						}
+
+						if(successContig!=NULL &&  contigIndex-successContig->index > 0.6*readLen)  // added 2012-11-08
+						{
+							kmers[0] = kmers[1] = NULL;
+						}
+						//else if(contigIndex<3*readLen && (successContig!=NULL &&  (contigIndex-successContig->index > 0.3*readLen || contigIndex-successContig->index > 15)))  // added 2012-11-11, deleted 2012-11-23
+						else if(averKmerOcc>15 && contigIndex<3*readLen && (successContig!=NULL &&  (contigIndex-successContig->index > 0.3*readLen || contigIndex-successContig->index > 15)))  // added 2012-11-23
+						{
+							kmers[0] = kmers[1] = NULL;
+						}
+						//else if(contigIndex<3*readLen && secondOccSE>15*minKmerOccSE && secondOccSE/maxOccSE>0.6)  // added 2012-11-13
+						//else if(contigIndex<3*readLen && secondOccSE>5*minKmerOccSE && secondOccSE/maxOccSE>0.75 && readsNumRatio<0.4)  // added 2012-11-16, deleted 2012-11-28
+						else if(contigIndex<3*readLen && secondOccSE>3*minKmerOccSE && secondOccSE/maxOccSE>0.6)  // added 2012-11-28
+						{
+							kmers[0] = kmers[1] = NULL;
+						}
+//						else if(contigIndex>=3*readLen && maxOccSE>2*maxOccNumFaiedPE && readsNumRatio<2.5*minReadsNumRatioThres)  // added 2012-11-14
+//						{
+//							// compute the maximal gap size in contig tail region
+//							if(computeGapSizeInContig(&tmp_gapSize, contighead, contig36, contigIndex, assemblyRound)==FAILED)
+//							{
+//								printf("line=%d, In %s(), cannot compute the gap size, error!\n", __LINE__, __func__);
+//								return FAILED;
+//							}
+//
+//							if(tmp_gapSize>10)
+//							{
+//								printf("==line=%d, contigIndex=%d, tmp_gapSize=%d\n", __LINE__, contigIndex, tmp_gapSize);
+//								kmers[0] = kmers[1] = NULL;
+//							}
+//						}
 					}
 				}else
 				{
+					//取正反向kmer
 					navigationFlag = NAVI_SE_FLAG;
 					if(getNextKmerBySE(contigIndex)==FAILED)
 					{
 						printf("line=%d, In %s(), localContigID=%ld, cannot get next kmer, error!\n", __LINE__, __func__, localContigID);
 						return FAILED;
 					}
-				}
-			}else
-			{
-				//取正反向kmer
-				navigationFlag = NAVI_SE_FLAG;
-				if(getNextKmerBySE(contigIndex)==FAILED)
-				{
-					printf("line=%d, In %s(), localContigID=%ld, cannot get next kmer, error!\n", __LINE__, __func__, localContigID);
-					return FAILED;
-				}
-			}
 
-			// check the reads number in the sub read region
-			if(kmers[0] || kmers[1])
-			{
-				if(contigIndex>=minContigLenCheckingReadsNum)
-				{
-					if(updateReadsNumReg(itemNumSuccessReadsArr, contigIndex, assemblyRound)==FAILED)
+					if(successContig!=NULL &&  contigIndex-successContig->index > 0.6*readLen)  // added 2012-11-08
 					{
-						printf("line=%d, In %s(), localContigID=%ld, contigIndex=%d, cannnot check the reads number in reads number region, error!\n", __LINE__, __func__, localContigID, contigIndex);
-						return FAILED;
+						kmers[0] = kmers[1] = NULL;
+					}
+					//else if(contigIndex<3*readLen && (successContig!=NULL && (contigIndex-successContig->index > 0.3*readLen || contigIndex-successContig->index > 15)))  // added 2012-11-11, deleted 2012-11-23
+					else if(averKmerOcc>15 && contigIndex<3*readLen && (successContig!=NULL && (contigIndex-successContig->index > 0.3*readLen || contigIndex-successContig->index > 15)))  // added 2012-11-23
+					{
+						kmers[0] = kmers[1] = NULL;
+					}
+					//else if(contigIndex<3*readLen && secondOccSE>15*minKmerOccSE && secondOccSE/maxOccSE>0.6)  // added 2012-11-13
+					//else if(contigIndex<3*readLen && secondOccSE>5*minKmerOccSE && secondOccSE/maxOccSE>0.75 && readsNumRatio<0.4)  // added 2012-11-16, deleted 2012-11-28
+					else if(contigIndex<3*readLen && secondOccSE>3*minKmerOccSE && secondOccSE/maxOccSE>0.6)  // added 2012-11-28
+					{
+						kmers[0] = kmers[1] = NULL;
+					}
+//					else if(contigIndex>=100*readLen && maxOccSE>2*maxOccNumFaiedPE && readsNumRatio<2*minReadsNumRatioThres)  // added 2012-11-14
+//					{
+//						// compute the maximal gap size in contig tail region
+//						if(computeGapSizeInContig(&tmp_gapSize, contighead, contig36, contigIndex, assemblyRound)==FAILED)
+//						{
+//							printf("line=%d, In %s(), cannot compute the gap size, error!\n", __LINE__, __func__);
+//							return FAILED;
+//						}
+//
+//						if(tmp_gapSize>10)
+//						{
+//							printf("==line=%d, contigIndex=%d, tmp_gapSize=%d\n", __LINE__, contigIndex, tmp_gapSize);
+//							kmers[0] = kmers[1] = NULL;
+//						}
+//					}
+				}
+
+				// check the reads number in the sub read region
+				if(kmers[0] || kmers[1])
+				{
+					if(contigIndex>=minContigLenCheckingReadsNum)
+					{
+						if(updateReadsNumReg(itemNumSuccessReadsArr, contigIndex, assemblyRound)==FAILED)
+						{
+							printf("line=%d, In %s(), localContigID=%ld, contigIndex=%d, cannnot check the reads number in reads number region, error!\n", __LINE__, __func__, localContigID, contigIndex);
+							return FAILED;
+						}
 					}
 				}
-			}
 
-			if(kmers[0]==NULL && kmers[1]==NULL)
-			{
-				if(successContig==NULL)
-				{ //没有成功的reads, 该contig拼接失败
-					//printf("line=%d, In %s(), localContigID=%ld, contigsNum=%d, assemblyRound=%d, contigIndex=%d, the successContig==NULL!\n", __LINE__, __func__, localContigID, contigsNum+1, assemblyRound, contigIndex);
-					break;
-				}
-
-//				printf("localContigID=%ld, assemblyRound=%d, contigIndex=%d, itemNumDecisionTable=%d\n", localContigID, assemblyRound, contigIndex, itemNumDecisionTable);
-//				if(navigationFlag==NAVI_PE_FLAG)
-//					printf("\toccsNumPE: (%d, %d, %d, %d)\n", occsNumPE[0], occsNumPE[1], occsNumPE[2], occsNumPE[3]);
-//				else if(navigationFlag==NAVI_SE_FLAG)
-//				{
-//					printf("\toccsNumPE: (%d, %d, %d, %d)\n", occsNumPE[0], occsNumPE[1], occsNumPE[2], occsNumPE[3]);
-//					printf("\toccsNumSE: (%d, %d, %d, %d)\n", occsNumSE[0], occsNumSE[1], occsNumSE[2], occsNumSE[3]);
-//				}
-//				printf("\tdistance=%d, readsNumRatio=%.2f\n", contigIndex-successContig->index, readsNumRatio);
-
-				//开始下一轮的拼接的预处理
-				if(assemblyRound==FIRST_ROUND_ASSEMBLY)
-				{ //该contig的第一轮拼接结束, 将进行第二轮拼接
-
-					assemblyRound ++;
-					turnContigIndex = contigIndex;
-
-					int returnCode = initSecondAssembly();
-					if(returnCode==FAILED)
-					{
+				if(kmers[0]==NULL && kmers[1]==NULL)
+				{
+					if(successContig==NULL)
+					{ //没有成功的reads, 该contig拼接失败
+						//printf("line=%d, In %s(), localContigID=%ld, contigsNum=%d, assemblyRound=%d, contigIndex=%d, the successContig==NULL!\n", __LINE__, __func__, localContigID, contigsNum+1, assemblyRound, contigIndex);
 						break;
-					}else if(returnCode==ERROR)
-					{
-						return FAILED;
 					}
 
-					continue;  //开始执行第二轮的拼接
-					//break; //只进行第一轮单向拼接
-
-				}else
-				{ //该contig的第2轮拼接结束, 该contig的拼接结束
-
-					// ############################ Debug information ##############################
-					//if(successContig==NULL && contigIndex>=CONTIG_LEN_THRESHOLD)
-					//{ //出错
-					//	printf("line=%d, In %s(), localContigID=%ld, contigID=%d, assemblyRound=%d, contigIndex=%d, successContig==NULL, Error!\n", __LINE__, __func__, localContigID, contigsNum+1, assemblyRound, contigIndex);
-					//	return FAILED;
-					//}
-					// ############################ Debug information ##############################
-
-					break;
-				}
-			}
-
-			if(navigationFlag==NAVI_PE_FLAG)
-			{
-				if(updateNaviOccQueue(naviOccQueue, &itemNumNaviOccQueue, &frontRowNaviOccQueue, &rearRowNaviOccQueue, maxOccPE)==FAILED)
-				{
-					printf("line=%d, In %s(), localContigID=%ld, cannot update the navigation occurrence queue, error!\n", __LINE__, __func__, localContigID);
-					return FAILED;
-				}
-			}else
-			{
-				if(updateNaviOccQueue(naviOccQueue, &itemNumNaviOccQueue, &frontRowNaviOccQueue, &rearRowNaviOccQueue, maxOccSE)==FAILED)
-				{
-					printf("line=%d, In %s(), localContigID=%ld, cannot update the navigation occurrence queue, error!\n", __LINE__, __func__, localContigID);
-					return FAILED;
-				}
-			}
-
-			// ############################ Debug information ##############################
-//			if(localContigID==100 && contigIndex>=11860 && assemblyRound==FIRST_ROUND_ASSEMBLY)
-//			{
-//				printf("localContigID=%ld, assemblyRound=%d, contigIndex=%d, itemNumDecisionTable=%d\n", localContigID, assemblyRound, contigIndex, itemNumDecisionTable);
-//				if(navigationFlag==NAVI_PE_FLAG)
-//					printf("\toccsNumPE: (%d, %d, %d, %d)\n", occsNumPE[0], occsNumPE[1], occsNumPE[2], occsNumPE[3]);
-//				else if(navigationFlag==NAVI_SE_FLAG)
-//				{
-//					printf("\toccsNumPE: (%d, %d, %d, %d)\n", occsNumPE[0], occsNumPE[1], occsNumPE[2], occsNumPE[3]);
-//					printf("\toccsNumSE: (%d, %d, %d, %d)\n", occsNumSE[0], occsNumSE[1], occsNumSE[2], occsNumSE[3]);
-//				}
-//				printf("\tdistance=%d, readsNumRatio=%.2f\n", contigIndex-successContig->index, readsNumRatio);
-//			}
-			// ############################ Debug information ##############################
-
-			contigIndex ++;
-
-			// Append a base to contig tail
-			if(addContigBase(&contigtail, kmerSeqIntAssembly[entriesPerKmer-1] & 3, contigIndex)==FAILED)
-			{
-				printf("line=%d, In %s(), localContigID=%ld, contigID=%d, assemblyRound=%d, contigIndex=%d, cannot add a contig base, Error!\n", __LINE__, __func__, localContigID, contigsNum+1, assemblyRound, contigIndex);
-				return FAILED;
-			}
-
-			// update the decision table according to kmers
-			if(updateDecisionTable(kmers)==FAILED)
-			{
-				printf("line=%d, In %s(), localContigID=%ld, cannot update decision table, error!\n", __LINE__, __func__, localContigID);
-				return FAILED;
-			}
-
-			// Update the reads status in decision table
-			if(updateAssemblingreadsStatus()==FAILED)
-			{
-				printf("line=%d, In %s(), localContigID=%ld, cannot update reads status in decision table, error!\n", __LINE__, __func__, localContigID);
-				return FAILED;
-			}
-
-			// Update the locked reads and their total number
-			if(updateLockedReads()==FAILED)
-			{
-				printf("line=%d, In %s(), localContigID=%ld, cannot update locked reads, error!\n", __LINE__, __func__, localContigID);
-				return FAILED;
-			}
-
-			// update the finished reads in decision table, and record the successful reads into successful reads array
-			if(updateFinishedReadsInDecisionTable()==FAILED)
-			{
-				printf("line=%d, In %s(), localContigID=%ld, cannot update finished reads in decision table, error!\n", __LINE__, __func__, localContigID);
-				return FAILED;
-			}
-
-			if(contigIndex<=readLen)
-			{ //如果contig的节点数目<=36，则contig36指向contighead节点，并将当次拼接kmer的序列的最后一个碱基添加进lastseq36数组
-				contig36 = contighead;
-				switch(kmerSeqIntAssembly[entriesPerKmer-1] & 3)
-				{
-					case 0: lastseq36[contigIndex-1] = 'A'; break;
-					case 1: lastseq36[contigIndex-1] = 'C'; break;
-					case 2: lastseq36[contigIndex-1] = 'G'; break;
-					case 3: lastseq36[contigIndex-1] = 'T'; break;
-				}
-				lastseq36[contigIndex] = '\0';
-			}else
-			{  //如果contig中节点数目>36，则contig36后移一个位置，并将lastseq36数组的碱基前移一位，并将当次拼接的kmer的序列添加进lastseq36数组
-				contig36 = contig36->next;
-				for(i=1; i<readLen; i++) lastseq36[i-1] = lastseq36[i];
-				switch(kmerSeqIntAssembly[entriesPerKmer-1] & 3)
-				{
-					case 0: lastseq36[readLen-1] = 'A'; break;
-					case 1: lastseq36[readLen-1] = 'C'; break;
-					case 2: lastseq36[readLen-1] = 'G'; break;
-					case 3: lastseq36[readLen-1] = 'T'; break;
-				}
-				lastseq36[readLen] = '\0';
-			}
-
-			contigtype *tmp_successContig = successContig;
-			if(itemNumSuccessReadsArr>0)//如果有成功结束的reads
-			{
-
-				// delete reads from De Bruijn graph
-				if(delReadsFromGraph(successReadsArr, itemNumSuccessReadsArr, lastseq36)==FAILED)
-				{
-					printf("line=%d, In %s(), localContigID=%ld, contigID=%d, contigIndex=%d, assemblyRound=%d, cannot delete the reads from graph, error!\n", __LINE__, __func__, localContigID, contigsNum+1, contigIndex, assemblyRound);
-					outputSuccessReads(successReadsArr, itemNumSuccessReadsArr);
-					return FAILED;
-				}
-
-				// add the successful reads information to contig chain
-				if(addRidposToContig(successReadsArr, &itemNumSuccessReadsArr, contig36, contigIndex)==FAILED)
-				{
-					printf("line=%d, In %s(), localContigID=%ld, contigID=%d, cannot add a contig base, error!\n", __LINE__, __func__, localContigID, contigsNum+1);
-					return FAILED;
-				}
-
-				tmp_successContig = getSuccessContig(contig36, successContig, contigIndex);
-
-				if(tmp_successContig==NULL)
-				{
-					//printf("line=%d, In %s(), localContigID=%ld, contigsNum=%d, assemblyRound=%d, contigIndex=%d, the tmp_successContig==NULL!\n", __LINE__, __func__, localContigID, contigsNum+1, assemblyRound, contigIndex);
-					//outputContig(contig36);
-					//return FAILED;
-				}else
-				{
-					successContig = tmp_successContig;
-
-					// Update the successful reads number
-					this_successReadNum += itemNumSuccessReadsArr;
-				}
-			}
-
-			//处理死循环
-			if(successContig==NULL)
-			{ //还未有成功的reads, 并且拼接长度已经超过60, 则该contig拼接失败, 退出
-				if(contigIndex>2*readLen-kmerSize)
-				{
-					//printf("line=%d, In %s(), localContigID=%ld, contigID=%d, assemblyRound=%d, contigIndex=%d, successContig==NULL!\n", __LINE__, __func__, localContigID, contigsNum+1, assemblyRound, contigIndex);
-					break;
-				}
-			}else if(tmp_successContig==NULL)
-			{
-				break;
-			//}else if((contigIndex-successContig->index > readLen-MIN_OVERLAP_LEN) || (contigIndex-successContig->index > 8 && ((readsNumRatio>2 || readsNumRatio<0.3) || secondOccSE>=minKmerOccSE)))
-			}else if(contigIndex-successContig->index > readLen-MIN_OVERLAP_LEN)
-			{ //已经有成功的reads, 则根据拼接的情况, 确定是否需要继续拼接
-
-				number_of_overlap_less_than_threshold ++;
-
-//				printf("===localContigID=%ld, assemblyRound=%d, contigIndex=%d, itemNumDecisionTable=%d\n", localContigID, assemblyRound, contigIndex, itemNumDecisionTable);
-//				if(navigationFlag==NAVI_PE_FLAG)
-//					printf("\toccsNumPE: (%d, %d, %d, %d)\n", occsNumPE[0], occsNumPE[1], occsNumPE[2], occsNumPE[3]);
-//				else if(navigationFlag==NAVI_SE_FLAG)
-//				{
-//					printf("\toccsNumPE: (%d, %d, %d, %d)\n", occsNumPE[0], occsNumPE[1], occsNumPE[2], occsNumPE[3]);
-//					printf("\toccsNumSE: (%d, %d, %d, %d)\n", occsNumSE[0], occsNumSE[1], occsNumSE[2], occsNumSE[3]);
-//				}
-//				printf("\tdistance=%d, readsNumRatio=%.2f\n", contigIndex-successContig->index, readsNumRatio);
-
-				//第二轮拼接时, contig长度大于100时才进行衔接操作
-				if(assemblyRound==SECOND_ROUND_ASSEMBLY && contigIndex<CONTIG_LEN_THRESHOLD)
-				{
-					break;
-				}
-
-				//第二轮拼接的预处理
-				if(assemblyRound==FIRST_ROUND_ASSEMBLY)
-				{ //现在处于第1论拼接, 需要进行第二轮拼接
-
-					assemblyRound ++; //第二轮拼接标记
-					turnContigIndex = contigIndex;
-
-					int returnCode = initSecondAssembly();
-					if(returnCode==FAILED)
-					{
-						break;
-					}else if(returnCode==ERROR)
-					{
-						return FAILED;
-					}
-
-				}else
-				{ //现在已经处于第2论拼接, 则该contig链表的拼接结束
-
-					// ############################ Debug information ##############################
-					//if(successContig==NULL && contigIndex>=CONTIG_LEN_THRESHOLD)
-					//{ //出错
-					//	printf("line=%d, In %s(), localContigID=%ld, contigID=%d, assemblyRound=%d, contigIndex=%d, successContig==NULL, Error!\n", __LINE__, __func__, localContigID, contigsNum+1, assemblyRound, contigIndex);
-					//	return FAILED;
-					//}
-					// ############################ Debug information ##############################
-
-					break;
-				}
-			}
-/*
-			else if(contigIndex-successContig->index >= 7)
-			{ //已经有成功的reads, 则根据拼接的情况, 确定是否需要继续拼接
-
-				if(calcAverOccNaviOccQueue(&averOccNumNaviOccQueue, naviOccQueue, itemNumNaviOccQueue)==FAILED)
-				{
-					printf("line=%d, In %s(), localContigID=%ld, contigID=%d, cannot compute the average occurrence in navigation occurrence queue, error!\n", __LINE__, __func__, localContigID, contigsNum+1);
-					return FAILED;
-				}
-
-				// get the length of low occurrence region
-				if(getLowOccLenNaviOccQueue(&lowOccNum, naviOccQueue, itemNumNaviOccQueue, frontRowNaviOccQueue)==FAILED)
-				{
-					printf("line=%d, In %s(), localContigID=%ld, contigID=%d, cannot get the low occurrence number in navigation occurrence queue, error!\n", __LINE__, __func__, localContigID, contigsNum+1);
-					return FAILED;
-				}
-				printf("#### contigIndex=%d, distance=%d, readsNumRatio=%.2f, averOccNumNaviOccQueue=%.2f, lowOccNum=%d\n", contigIndex, contigIndex-successContig->index, readsNumRatio, averOccNumNaviOccQueue, lowOccNum);
-
-				//if((lowOccNum>2) || ((navigationFlag==NAVI_PE_FLAG && averOccNumNaviOccQueue<2*minKmerOccPE) || (navigationFlag==NAVI_SE_FLAG && averOccNumNaviOccQueue<2*minKmerOccSE)) || (readsNumRatio>2 || readsNumRatio<0.3) || ((navigationFlag==NAVI_PE_FLAG && secondOccPE>=minKmerOccPE && secondOccPE/maxOccPE>=0.2) || (navigationFlag==NAVI_SE_FLAG && secondOccSE>=minKmerOccSE && secondOccSE/maxOccSE>=0.15)))
-				//if((lowOccNum>2) || (readsNumRatio>2 || readsNumRatio<0.3) || ((navigationFlag==NAVI_PE_FLAG && secondOccPE>=minKmerOccPE && secondOccPE/maxOccPE>=0.2) || (navigationFlag==NAVI_SE_FLAG && secondOccSE>=minKmerOccSE && secondOccSE/maxOccSE>=0.15)))
-				//if((averOccNumNaviOccQueue<2.5*minKmerOccSE) || (readsNumRatio>2 || readsNumRatio<0.3) || ((navigationFlag==NAVI_PE_FLAG && secondOccPE>=minKmerOccPE && secondOccPE/maxOccPE>=0.2) || (navigationFlag==NAVI_SE_FLAG && secondOccSE>=minKmerOccSE && secondOccSE/maxOccSE>=0.15)))
-				if((readsNumRatio>3 || readsNumRatio<0.3) || ((navigationFlag==NAVI_PE_FLAG && secondOccPE>=minKmerOccPE && secondOccPE/maxOccPE>=0.2) || (navigationFlag==NAVI_SE_FLAG && secondOccSE>=minKmerOccSE && secondOccSE/maxOccSE>=0.15)))
-				{
-					number_of_overlap_less_than_threshold ++;
-
-					printf("===localContigID=%ld, assemblyRound=%d, contigIndex=%d, itemNumDecisionTable=%d\n", localContigID, assemblyRound, contigIndex, itemNumDecisionTable);
+#if (DEBUG_OUTPUT==YES)
+					printf("localContigID=%ld, contigID=%d, assemblyRound=%d, contigIndex=%d, itemNumDecisionTable=%d\n", localContigID, contigsNum+1, assemblyRound, contigIndex, itemNumDecisionTable);
 					if(navigationFlag==NAVI_PE_FLAG)
 						printf("\toccsNumPE: (%d, %d, %d, %d)\n", occsNumPE[0], occsNumPE[1], occsNumPE[2], occsNumPE[3]);
 					else if(navigationFlag==NAVI_SE_FLAG)
+						printf("\toccsNumSE: (%d, %d, %d, %d)\n", occsNumSE[0], occsNumSE[1], occsNumSE[2], occsNumSE[3]);
+					else
 					{
 						printf("\toccsNumPE: (%d, %d, %d, %d)\n", occsNumPE[0], occsNumPE[1], occsNumPE[2], occsNumPE[3]);
 						printf("\toccsNumSE: (%d, %d, %d, %d)\n", occsNumSE[0], occsNumSE[1], occsNumSE[2], occsNumSE[3]);
 					}
-					printf("\tdistance=%d, readsNumRatio=%.2f, averOccNumNaviOccQueue=%.2f, lowOccNum=%d\n", contigIndex-successContig->index, readsNumRatio, averOccNumNaviOccQueue, lowOccNum);
+					if(successContig)
+						printf("\tdistance=%d, readsNumRatio=%.2f\n", contigIndex-successContig->index, readsNumRatio);
+#endif
+
+					//开始下一轮的拼接的预处理
+					if(assemblyRound==FIRST_ROUND_ASSEMBLY)
+					{ //该contig的第一轮拼接结束, 将进行第二轮拼接
+
+						assemblyRound ++;
+						turnContigIndex = contigIndex;
+
+						int returnCode = initSecondAssembly();
+						if(returnCode==FAILED)
+						{
+							break;
+						}else if(returnCode==ERROR)
+						{
+							return FAILED;
+						}
+
+						continue;  //开始执行第二轮的拼接
+						//break; //只进行第一轮单向拼接
+
+					}else
+					{ //该contig的第2轮拼接结束, 该contig的拼接结束
+
+						// ############################ Debug information ##############################
+						//if(successContig==NULL && contigIndex>=CONTIG_LEN_THRESHOLD)
+						//{ //出错
+						//	printf("line=%d, In %s(), localContigID=%ld, contigID=%d, assemblyRound=%d, contigIndex=%d, successContig==NULL, Error!\n", __LINE__, __func__, localContigID, contigsNum+1, assemblyRound, contigIndex);
+						//	return FAILED;
+						//}
+						// ############################ Debug information ##############################
+
+						break;
+					}
+				}
+
+				if(navigationFlag==NAVI_PE_FLAG)
+				{
+					if(updateNaviOccQueue(naviOccQueue, &itemNumNaviOccQueue, &frontRowNaviOccQueue, &rearRowNaviOccQueue, maxOccPE)==FAILED)
+					{
+						printf("line=%d, In %s(), localContigID=%ld, cannot update the navigation occurrence queue, error!\n", __LINE__, __func__, localContigID);
+						return FAILED;
+					}
+				}else
+				{
+					if(updateNaviOccQueue(naviOccQueue, &itemNumNaviOccQueue, &frontRowNaviOccQueue, &rearRowNaviOccQueue, maxOccSE)==FAILED)
+					{
+						printf("line=%d, In %s(), localContigID=%ld, cannot update the navigation occurrence queue, error!\n", __LINE__, __func__, localContigID);
+						return FAILED;
+					}
+				}
+
+#if (DEBUG_CONTIG_CHECK==YES)
+				// ############################ Debug information ##############################
+				if(localContigID==119 && contigIndex>=100/* && assemblyRound!=FIRST_ROUND_ASSEMBLY*/)
+				{
+					printf("localContigID=%ld, contigID=%d, assemblyRound=%d, contigIndex=%d, itemNumDecisionTable=%d\n", localContigID, contigsNum+1, assemblyRound, contigIndex, itemNumDecisionTable);
+					if(navigationFlag==NAVI_PE_FLAG)
+						printf("\toccsNumPE: (%d, %d, %d, %d)\n", occsNumPE[0], occsNumPE[1], occsNumPE[2], occsNumPE[3]);
+					else if(navigationFlag==NAVI_SE_FLAG)
+						printf("\toccsNumSE: (%d, %d, %d, %d)\n", occsNumSE[0], occsNumSE[1], occsNumSE[2], occsNumSE[3]);
+					else
+					{
+						printf("\toccsNumPE: (%d, %d, %d, %d)\n", occsNumPE[0], occsNumPE[1], occsNumPE[2], occsNumPE[3]);
+						printf("\toccsNumSE: (%d, %d, %d, %d)\n", occsNumSE[0], occsNumSE[1], occsNumSE[2], occsNumSE[3]);
+					}
+					if(successContig)
+						printf("\tdistance=%d, readsNumRatio=%.2f\n", contigIndex-successContig->index, readsNumRatio);
+				}
+				// ############################ Debug information ##############################
+#endif
+
+				contigIndex ++;
+
+				// Append a base to contig tail
+				if(addContigBase(&contigtail, kmerSeqIntAssembly[entriesPerKmer-1] & 3, contigIndex)==FAILED)
+				{
+					printf("line=%d, In %s(), localContigID=%ld, contigID=%d, assemblyRound=%d, contigIndex=%d, cannot add a contig base, Error!\n", __LINE__, __func__, localContigID, contigsNum+1, assemblyRound, contigIndex);
+					return FAILED;
+				}
+
+				// update the decision table according to kmers
+				if(updateDecisionTable(kmers)==FAILED)
+				{
+					printf("line=%d, In %s(), localContigID=%ld, cannot update decision table, error!\n", __LINE__, __func__, localContigID);
+					return FAILED;
+				}
+
+				// Update the reads status in decision table
+				if(updateAssemblingreadsStatus()==FAILED)
+				{
+					printf("line=%d, In %s(), localContigID=%ld, cannot update reads status in decision table, error!\n", __LINE__, __func__, localContigID);
+					return FAILED;
+				}
+
+				// Update the locked reads and their total number
+				if(updateLockedReads()==FAILED)
+				{
+					printf("line=%d, In %s(), localContigID=%ld, cannot update locked reads, error!\n", __LINE__, __func__, localContigID);
+					return FAILED;
+				}
+
+				// update the finished reads in decision table, and record the successful reads into successful reads array
+				if(updateFinishedReadsInDecisionTable()==FAILED)
+				{
+					printf("line=%d, In %s(), localContigID=%ld, cannot update finished reads in decision table, error!\n", __LINE__, __func__, localContigID);
+					return FAILED;
+				}
+
+				if(contigIndex<=readLen)
+				{ //如果contig的节点数目<=36，则contig36指向contighead节点，并将当次拼接kmer的序列的最后一个碱基添加进lastseq36数组
+					contig36 = contighead;
+					switch(kmerSeqIntAssembly[entriesPerKmer-1] & 3)
+					{
+						case 0: lastseq36[contigIndex-1] = 'A'; break;
+						case 1: lastseq36[contigIndex-1] = 'C'; break;
+						case 2: lastseq36[contigIndex-1] = 'G'; break;
+						case 3: lastseq36[contigIndex-1] = 'T'; break;
+					}
+					lastseq36[contigIndex] = '\0';
+				}else
+				{  //如果contig中节点数目>36，则contig36后移一个位置，并将lastseq36数组的碱基前移一位，并将当次拼接的kmer的序列添加进lastseq36数组
+					contig36 = contig36->next;
+					for(i=1; i<readLen; i++) lastseq36[i-1] = lastseq36[i];
+					switch(kmerSeqIntAssembly[entriesPerKmer-1] & 3)
+					{
+						case 0: lastseq36[readLen-1] = 'A'; break;
+						case 1: lastseq36[readLen-1] = 'C'; break;
+						case 2: lastseq36[readLen-1] = 'G'; break;
+						case 3: lastseq36[readLen-1] = 'T'; break;
+					}
+					lastseq36[readLen] = '\0';
+				}
+
+				contigtype *tmp_successContig = successContig;
+				if(itemNumSuccessReadsArr>0)//如果有成功结束的reads
+				{
+
+					// delete reads from De Bruijn graph
+					if(delReadsFromGraph(successReadsArr, itemNumSuccessReadsArr, lastseq36)==FAILED)
+					{
+						printf("line=%d, In %s(), localContigID=%ld, contigID=%d, contigIndex=%d, assemblyRound=%d, cannot delete the reads from graph, error!\n", __LINE__, __func__, localContigID, contigsNum+1, contigIndex, assemblyRound);
+						outputSuccessReads(successReadsArr, itemNumSuccessReadsArr);
+						return FAILED;
+					}
+
+					// add the successful reads information to contig chain
+					if(addRidposToContig(successReadsArr, &itemNumSuccessReadsArr, contig36, contigIndex)==FAILED)
+					{
+						printf("line=%d, In %s(), localContigID=%ld, contigID=%d, cannot add a contig base, error!\n", __LINE__, __func__, localContigID, contigsNum+1);
+						return FAILED;
+					}
+
+					tmp_successContig = getSuccessContig(contig36, successContig, contigIndex);
+
+					if(tmp_successContig==NULL)
+					{
+						//printf("line=%d, In %s(), localContigID=%ld, contigsNum=%d, assemblyRound=%d, contigIndex=%d, the tmp_successContig==NULL!\n", __LINE__, __func__, localContigID, contigsNum+1, assemblyRound, contigIndex);
+						//outputContig(contig36);
+						//return FAILED;
+					}else
+					{
+						successContig = tmp_successContig;
+
+						// Update the successful reads number
+						this_successReadNum += itemNumSuccessReadsArr;
+					}
+				}
+
+				//处理死循环
+				if(successContig==NULL)
+				{ //还未有成功的reads, 并且拼接长度已经超过60, 则该contig拼接失败, 退出
+					if(contigIndex>2*readLen-kmerSize)
+					{
+						//printf("line=%d, In %s(), localContigID=%ld, contigID=%d, assemblyRound=%d, contigIndex=%d, successContig==NULL!\n", __LINE__, __func__, localContigID, contigsNum+1, assemblyRound, contigIndex);
+						break;
+					}
+				}else if(tmp_successContig==NULL)
+				{
+					break;
+				//}else if((contigIndex-successContig->index > readLen-MIN_OVERLAP_LEN) || (contigIndex-successContig->index > 8 && ((readsNumRatio>2 || readsNumRatio<0.3) || secondOccSE>=minKmerOccSE)))
+				}else if(contigIndex-successContig->index > readLen-MIN_OVERLAP_LEN)
+				{ //已经有成功的reads, 则根据拼接的情况, 确定是否需要继续拼接
+
+					number_of_overlap_less_than_threshold ++;
+
+#if (DEBUG_OUTPUT==YES)
+					printf("===localContigID=%ld, contigID=%d, assemblyRound=%d, contigIndex=%d, itemNumDecisionTable=%d\n", localContigID, contigsNum+1, assemblyRound, contigIndex, itemNumDecisionTable);
+					if(navigationFlag==NAVI_PE_FLAG)
+						printf("\toccsNumPE: (%d, %d, %d, %d)\n", occsNumPE[0], occsNumPE[1], occsNumPE[2], occsNumPE[3]);
+					else if(navigationFlag==NAVI_SE_FLAG)
+						printf("\toccsNumSE: (%d, %d, %d, %d)\n", occsNumSE[0], occsNumSE[1], occsNumSE[2], occsNumSE[3]);
+					else
+					{
+						printf("\toccsNumPE: (%d, %d, %d, %d)\n", occsNumPE[0], occsNumPE[1], occsNumPE[2], occsNumPE[3]);
+						printf("\toccsNumSE: (%d, %d, %d, %d)\n", occsNumSE[0], occsNumSE[1], occsNumSE[2], occsNumSE[3]);
+					}
+					if(successContig)
+						printf("\tdistance=%d, readsNumRatio=%.2f\n", contigIndex-successContig->index, readsNumRatio);
+#endif
 
 					//第二轮拼接时, contig长度大于100时才进行衔接操作
 					if(assemblyRound==SECOND_ROUND_ASSEMBLY && contigIndex<CONTIG_LEN_THRESHOLD)
@@ -524,112 +524,213 @@ short buildContigs(char *contigFile, char *graphFile)
 						break;
 					}
 				}
-			}
-*/
-		}//end while(kmer)
+/*
+				else if(contigIndex-successContig->index >= 7)
+				{ //已经有成功的reads, 则根据拼接的情况, 确定是否需要继续拼接
 
-		if(successContig)
-		{
-			// ############################ Debug information ##############################
-//			if(localContigID==98)
-//			{
-//				outputContigToTmpFile(contighead, HANGING_READ_TYPE_CONTIG_FILE);
-//			}
-			// ############################ Debug information ##############################
-
-			// 将contig节点退回到最近成功的contigIndex的位置, 并将之后的contig节点删掉.
-			if(updateContigtailnodes(contighead, successContig, &contigIndex)==FAILED)
-			{
-				printf("line=%d, In %s(), localContigID=%ld, contigID=%d, assemblyRound=%d, contigIndex=%d, cannot update Contigtail nodes, Error!\n", __LINE__, __func__, localContigID, contigsNum+1, assemblyRound, contigIndex);
-				return FAILED;
-			}
-
-			//====================================================
-			// trim a read length of contig nodes at tail
-			if(contigIndex>=3*readLen)
-			{
-				if(trimContigTailByReadLen(contighead, &contigtail, &successContig, &contigIndex, SECOND_ROUND_ASSEMBLY)==FAILED)
-				{
-					printf("line=%d, In %s(), localContigID=%ld, cannot trim contig nodes at contig tail by a read length, error!\n", __LINE__, __func__, localContigID);
-					return ERROR;
-				}
-			}
-			//====================================================
-
-			if(PEGivenType>NONE_PE_GIVEN_TYPE && readsNumInPEHashArr>0)
-			{
-				if(cleanReadsFromPEHashtable()==FAILED)
-				{
-					printf("line=%d, In %s(), localContigID=%ld, cannot clean PE hash table, error!\n", __LINE__, __func__, localContigID);
-					return FAILED;
-				}
-			}
-
-			//只考虑长度大于100的contig链表
-			if(contigIndex>=minContigLen)
-			{ //contig长度大于100, 则写进文件中
-				contigsNum ++;
-
-				// ############################ Debug information ##############################
-				//printf("contigID=%d, contigLen=%d, turnContigIndex=%d.\n", contigsNum, contigIndex, turnContigIndex);
-				// ############################ Debug information ##############################
-
-				successReadNum += this_successReadNum;
-
-				// output contig nodes to file
-				if(outputContigToFile(fpContigsBase, BASE_TYPE_FASTA_CONTIG_FILE, contighead, contigsNum, contigIndex)==FAILED)
-				{
-					printf("line=%d, In %s(), localContigID=%ld, cannot output contig nodes to file, error!\n", __LINE__, __func__, localContigID);
-					return FAILED;
-				}
-				if(hangingContigOutFlag==YES)
-				{
-					if(outputContigToFile(fpContigsHanging, HANGING_READ_TYPE_CONTIG_FILE, contighead, contigsNum, contigIndex)==FAILED)
+					if(calcAverOccNaviOccQueue(&averOccNumNaviOccQueue, naviOccQueue, itemNumNaviOccQueue)==FAILED)
 					{
-						printf("line=%d, In %s(), localContigID=%ld, cannot output contig nodes to file, error!\n", __LINE__, __func__, localContigID);
+						printf("line=%d, In %s(), localContigID=%ld, contigID=%d, cannot compute the average occurrence in navigation occurrence queue, error!\n", __LINE__, __func__, localContigID, contigsNum+1);
+						return FAILED;
+					}
+
+					// get the length of low occurrence region
+					if(getLowOccLenNaviOccQueue(&lowOccNum, naviOccQueue, itemNumNaviOccQueue, frontRowNaviOccQueue)==FAILED)
+					{
+						printf("line=%d, In %s(), localContigID=%ld, contigID=%d, cannot get the low occurrence number in navigation occurrence queue, error!\n", __LINE__, __func__, localContigID, contigsNum+1);
+						return FAILED;
+					}
+					printf("#### contigIndex=%d, distance=%d, readsNumRatio=%.2f, averOccNumNaviOccQueue=%.2f, lowOccNum=%d\n", contigIndex, contigIndex-successContig->index, readsNumRatio, averOccNumNaviOccQueue, lowOccNum);
+
+					//if((lowOccNum>2) || ((navigationFlag==NAVI_PE_FLAG && averOccNumNaviOccQueue<2*minKmerOccPE) || (navigationFlag==NAVI_SE_FLAG && averOccNumNaviOccQueue<2*minKmerOccSE)) || (readsNumRatio>2 || readsNumRatio<0.3) || ((navigationFlag==NAVI_PE_FLAG && secondOccPE>=minKmerOccPE && secondOccPE/maxOccPE>=0.2) || (navigationFlag==NAVI_SE_FLAG && secondOccSE>=minKmerOccSE && secondOccSE/maxOccSE>=0.15)))
+					//if((lowOccNum>2) || (readsNumRatio>2 || readsNumRatio<0.3) || ((navigationFlag==NAVI_PE_FLAG && secondOccPE>=minKmerOccPE && secondOccPE/maxOccPE>=0.2) || (navigationFlag==NAVI_SE_FLAG && secondOccSE>=minKmerOccSE && secondOccSE/maxOccSE>=0.15)))
+					//if((averOccNumNaviOccQueue<2.5*minKmerOccSE) || (readsNumRatio>2 || readsNumRatio<0.3) || ((navigationFlag==NAVI_PE_FLAG && secondOccPE>=minKmerOccPE && secondOccPE/maxOccPE>=0.2) || (navigationFlag==NAVI_SE_FLAG && secondOccSE>=minKmerOccSE && secondOccSE/maxOccSE>=0.15)))
+					if((readsNumRatio>3 || readsNumRatio<0.3) || ((navigationFlag==NAVI_PE_FLAG && secondOccPE>=minKmerOccPE && secondOccPE/maxOccPE>=0.2) || (navigationFlag==NAVI_SE_FLAG && secondOccSE>=minKmerOccSE && secondOccSE/maxOccSE>=0.15)))
+					{
+						number_of_overlap_less_than_threshold ++;
+
+						printf("===localContigID=%ld, assemblyRound=%d, contigIndex=%d, itemNumDecisionTable=%d\n", localContigID, assemblyRound, contigIndex, itemNumDecisionTable);
+						if(navigationFlag==NAVI_PE_FLAG)
+							printf("\toccsNumPE: (%d, %d, %d, %d)\n", occsNumPE[0], occsNumPE[1], occsNumPE[2], occsNumPE[3]);
+						else if(navigationFlag==NAVI_SE_FLAG)
+						{
+							printf("\toccsNumPE: (%d, %d, %d, %d)\n", occsNumPE[0], occsNumPE[1], occsNumPE[2], occsNumPE[3]);
+							printf("\toccsNumSE: (%d, %d, %d, %d)\n", occsNumSE[0], occsNumSE[1], occsNumSE[2], occsNumSE[3]);
+						}
+						printf("\tdistance=%d, readsNumRatio=%.2f, averOccNumNaviOccQueue=%.2f, lowOccNum=%d\n", contigIndex-successContig->index, readsNumRatio, averOccNumNaviOccQueue, lowOccNum);
+
+						//第二轮拼接时, contig长度大于100时才进行衔接操作
+						if(assemblyRound==SECOND_ROUND_ASSEMBLY && contigIndex<CONTIG_LEN_THRESHOLD)
+						{
+							break;
+						}
+
+						//第二轮拼接的预处理
+						if(assemblyRound==FIRST_ROUND_ASSEMBLY)
+						{ //现在处于第1论拼接, 需要进行第二轮拼接
+
+							assemblyRound ++; //第二轮拼接标记
+							turnContigIndex = contigIndex;
+
+							int returnCode = initSecondAssembly();
+							if(returnCode==FAILED)
+							{
+								break;
+							}else if(returnCode==ERROR)
+							{
+								return FAILED;
+							}
+
+						}else
+						{ //现在已经处于第2论拼接, 则该contig链表的拼接结束
+
+							// ############################ Debug information ##############################
+							//if(successContig==NULL && contigIndex>=CONTIG_LEN_THRESHOLD)
+							//{ //出错
+							//	printf("line=%d, In %s(), localContigID=%ld, contigID=%d, assemblyRound=%d, contigIndex=%d, successContig==NULL, Error!\n", __LINE__, __func__, localContigID, contigsNum+1, assemblyRound, contigIndex);
+							//	return FAILED;
+							//}
+							// ############################ Debug information ##############################
+
+							break;
+						}
+					}
+				}
+*/
+			}//end while(kmer)
+
+			if(successContig)
+			{
+				// ############################ Debug information ##############################
+//				if(localContigID==98)
+//				{
+//					outputContigToTmpFile(contighead, HANGING_READ_TYPE_CONTIG_FILE);
+//				}
+				// ############################ Debug information ##############################
+
+				// 将contig节点退回到最近成功的contigIndex的位置, 并将之后的contig节点删掉.
+				if(updateContigtailnodes(contighead, successContig, &contigIndex)==FAILED)
+				{
+					printf("line=%d, In %s(), localContigID=%ld, contigID=%d, assemblyRound=%d, contigIndex=%d, cannot update Contigtail nodes, Error!\n", __LINE__, __func__, localContigID, contigsNum+1, assemblyRound, contigIndex);
+					return FAILED;
+				}
+
+				//====================================================
+				// trim a read length of contig nodes at tail
+				//if(averKmerOcc>10 && contigIndex>=3*readLen)  // deleted 2012-11-28
+				if(trimReadLenFlag==YES)						// added 2012-11-28
+				{
+					if(trimContigTailByReadLen(contighead, &contigtail, &successContig, &contigIndex, SECOND_ROUND_ASSEMBLY)==FAILED)
+					{
+						printf("line=%d, In %s(), localContigID=%ld, cannot trim contig nodes at contig tail by a read length, error!\n", __LINE__, __func__, localContigID);
+						return ERROR;
+					}
+				}
+				//====================================================
+
+				if(PEGivenType>NONE_PE_GIVEN_TYPE && readsNumInPEHashArr>0)
+				{
+					if(cleanReadsFromPEHashtable()==FAILED)
+					{
+						printf("line=%d, In %s(), localContigID=%ld, cannot clean PE hash table, error!\n", __LINE__, __func__, localContigID);
 						return FAILED;
 					}
 				}
 
-				basesNum += contigIndex;
-			}else
-			{ //contig长度小于100, 则恢复该contig链表中的reads
+				//只考虑长度大于100的contig链表
+				if(contigIndex>=minContigLen)
+				{ //contig长度大于100, 则写进文件中
+					contigsNum ++;
 
-				successReadNum -= this_successReadNum; //更新成功的reads数量
+					// ############################ Debug information ##############################
+					//printf("contigID=%d, contigLen=%d, turnContigIndex=%d.\n", contigsNum, contigIndex, turnContigIndex);
+					// ############################ Debug information ##############################
+
+					successReadNum += this_successReadNum;
+
+					// output contig nodes to file
+					if(outputContigToFile(fpContigsBase, BASE_TYPE_FASTA_CONTIG_FILE, contighead, contigsNum, contigIndex)==FAILED)
+					{
+						printf("line=%d, In %s(), localContigID=%ld, cannot output contig nodes to file, error!\n", __LINE__, __func__, localContigID);
+						return FAILED;
+					}
+					if(hangingContigOutFlag==YES)
+					{
+						if(outputContigToFile(fpContigsHanging, HANGING_READ_TYPE_CONTIG_FILE, contighead, contigsNum, contigIndex)==FAILED)
+						{
+							printf("line=%d, In %s(), localContigID=%ld, cannot output contig nodes to file, error!\n", __LINE__, __func__, localContigID);
+							return FAILED;
+						}
+					}
+
+					basesNum += contigIndex;
+				}else
+				{ //contig长度小于100, 则恢复该contig链表中的reads
+
+					successReadNum -= this_successReadNum; //更新成功的reads数量
 /*
-				//长度小于100, 则将该contig中的reads的删除标记还原
-				if(recoverDeledReads(contighead)==FAILED)
-				{
-					printf("line=%d, In %s(), localContigID=%ld, contigID=%d, contigIndex=%d, cannot recover the deleted reads, Error!\n", __LINE__, __func__, localContigID, contigsNum+1, contigIndex);
-					break;
-				}
+					//长度小于100, 则将该contig中的reads的删除标记还原
+					if(recoverDeledReads(contighead)==FAILED)
+					{
+						printf("line=%d, In %s(), localContigID=%ld, contigID=%d, contigIndex=%d, cannot recover the deleted reads, Error!\n", __LINE__, __func__, localContigID, contigsNum+1, contigIndex);
+						break;
+					}
 */
-			}
-		}else
-		{
-			// ############################ Debug information ##############################
-			//if(contigIndex>=CONTIG_LEN_THRESHOLD)
-			//{
-			//	printf("line=%d, In %s(), localContigID=%ld, contigsNum=%d, assemblyRound=%d, contigIndex=%d, successContig==NULL, Error!\n", __LINE__, __func__, localContigID, contigsNum+1, assemblyRound, contigIndex);
-			//	return FAILED;
-			//}
-			// ############################ Debug information ##############################
-		}
-
-		// clean the PE hash table
-		if(PEGivenType>NONE_PE_GIVEN_TYPE && readsNumInPEHashArr>0)
-		{
-			if(cleanReadsFromPEHashtable()==FAILED)
+				}
+			}else
 			{
-				printf("line=%d, In %s(), localContigID=%ld, cannot clean reads from PE hash table, error!\n", __LINE__, __func__, localContigID);
-				return FAILED;
+				// ############################ Debug information ##############################
+				//if(contigIndex>=CONTIG_LEN_THRESHOLD)
+				//{
+				//	printf("line=%d, In %s(), localContigID=%ld, contigsNum=%d, assemblyRound=%d, contigIndex=%d, successContig==NULL, Error!\n", __LINE__, __func__, localContigID, contigsNum+1, assemblyRound, contigIndex);
+				//	return FAILED;
+				//}
+				// ############################ Debug information ##############################
 			}
-		}
 
-		//释放该contig拼接过程中占用的内存，并初始化新的contig
-		releaseContig(contighead);
+			// clean the PE hash table
+			if(PEGivenType>NONE_PE_GIVEN_TYPE && readsNumInPEHashArr>0)
+			{
+				if(cleanReadsFromPEHashtable()==FAILED)
+				{
+					printf("line=%d, In %s(), localContigID=%ld, cannot clean reads from PE hash table, error!\n", __LINE__, __func__, localContigID);
+					return FAILED;
+				}
+			}
 
-	} //end while(kmerIndex < TABLE_SIZE_DE_BRUIJN)
+			//释放该contig拼接过程中占用的内存，并初始化新的contig
+			releaseContig(contighead);
+
+			// update the assembly percentage
+			if((int)((double) successReadNum / validReadNum * 100) > percent)
+			{
+				percentNum ++;
+				percent = (int)((double) successReadNum / validReadNum * 100);
+
+#if(DEBUG_OUTPUT==YES)
+			printf("%d%%\n", percent);
+#else
+			printf("%d%%", percent);
+			if(percentNum%10==0)
+				printf("\n");
+			else
+				printf("\t");
+#endif
+
+				fflush(stdout);
+			}
+
+		} //end while(kmerIndex < TABLE_SIZE_DE_BRUIJN)
+	}
+
+	if(percent!=100)
+	{
+		percent = 100;
+		printf("%d%%\n", percent);
+		fflush(stdout);
+		percentNum ++;
+	}
+
 
 	fclose(fpContigsBase);
 	fpContigsBase = NULL;
@@ -640,10 +741,13 @@ short buildContigs(char *contigFile, char *graphFile)
 	}
 
 	freeMemory();
-	releaseGraph(deBruijnGraph);  //free graph
 
 	printf("contigsNum=%d, basesNum=%ld\n", contigsNum, basesNum);
 
+	if(outputRemainedKmers(deBruijnGraph)==FAILED)
+	{
+		printf("line=%d, In %s(), cannot output the remained k-mers, error!\n", __LINE__, __func__);
+	}
 
 	gettimeofday(&tp_end,NULL);
 	time_used = tp_end.tv_sec-tp_start.tv_sec + (double)(tp_end.tv_usec-tp_start.tv_usec)/1000000;
@@ -663,20 +767,19 @@ short buildContigs(char *contigFile, char *graphFile)
 short initMemory()
 {
 	//longKmerSize = ceil((readLen - 2*errorRegLenEnd3 - kmerSize) * LONG_KMER_SIZE_FACTOR) + kmerSize;
-	longKmerSize = ceil((readLen - 1.5*errorRegLenEnd3 - kmerSize) * LONG_KMER_SIZE_FACTOR) + kmerSize;
+	//longKmerSize = ceil((readLen - 1.5*errorRegLenEnd3 - kmerSize) * LONG_KMER_SIZE_FACTOR) + kmerSize; //=====================
 	//longKmerSize = ceil((readLen - errorRegLenEnd3 - kmerSize) * LONG_KMER_SIZE_FACTOR) + kmerSize;
 	//longKmerSize = ceil((readLen - errorRegLenEnd3) * 0.9);
 
+	longKmerSize = ceil(readLen * LONG_KMER_SIZE_FACTOR);
+
 	if((longKmerSize & 1) == 0)
 		longKmerSize --;
-	longKmerStepSize = floor((longKmerSize - kmerSize) / 4.0);
+	longKmerStepSize = floor((longKmerSize - kmerSize) / 5.0);
 	if((longKmerStepSize & 1) == 1)
 		longKmerStepSize ++;
 	if(longKmerStepSize<1)
 		longKmerStepSize = 2;
-
-	printf("averKmerOcc=%.2f\n", averKmerOcc);
-	printf("longKmerSize=%d, longKmerStepSize=%d\n", longKmerSize, longKmerStepSize);
 
 	if(PEGivenType>=NONE_PE_GIVEN_TYPE)
 	{
@@ -685,8 +788,12 @@ short initMemory()
 
 		if(minKmerOccPE<MIN_KMER_OCC_THRES)
 			minKmerOccPE = MIN_KMER_OCC_THRES;
+		//else if(minKmerOccPE>MAX_KMER_OCC_THRES)
+		//	minKmerOccPE = MAX_KMER_OCC_THRES;
 		if(minKmerOccSE<MIN_KMER_OCC_THRES)
 			minKmerOccSE = MIN_KMER_OCC_THRES;
+		//else if(minKmerOccSE>MAX_KMER_OCC_THRES)
+		//	minKmerOccSE = MAX_KMER_OCC_THRES;
 
 		//maxSecondOcc = minKmerOccSE * OCCS_NUM_FACTOR;
 		//maxSecondOcc = ceil(minKmerOccSE * MAX_SECOND_OCC_FACTOR);
@@ -716,6 +823,9 @@ short initMemory()
 //			maxOccNumFaiedPE *= 0.8;
 		//maxNavigationNumSE = MAX_NAVI_NUM_SE_THRES;
 
+#if(DEBUG_PARA_PRINT==YES)
+		printf("averKmerOcc=%.2f\n", averKmerOcc);
+		printf("longKmerSize=%d, longKmerStepSize=%d\n", longKmerSize, longKmerStepSize);
 		printf("minKmerOccSE=%.2f, minKmerOccPE=%.2f\n", minKmerOccSE, minKmerOccPE);
 		printf("maxSecondOcc=%.2f\n", maxSecondOcc);
 		//printf("maxFirstOcc=%.2f\n", maxFirstOcc);
@@ -723,6 +833,7 @@ short initMemory()
 		printf("minReadsNumPEHashThres=%.2f\n", minReadsNumPEHashThres);
 		printf("maxOccNumFaiedPE=%.2f\n", maxOccNumFaiedPE);
 		//printf("maxNavigationNumSE=%d\n", maxNavigationNumSE);
+#endif
 	}else
 	{
 		minKmerOccSE = ceil(averKmerOcc * MIN_KMER_OCC_FACTOR);
@@ -750,14 +861,15 @@ short initMemory()
 			minLongKmerOcc = MIN_LONG_KMER_OCC_THRES;
 		}
 
+#if(DEBUG_PARA_PRINT==YES)
 		printf("minKmerOccSE=%.2f\n", minKmerOccSE);
 		printf("maxSecondOcc=%.2f\n", maxSecondOcc);
 		//printf("maxFirstOcc=%.2f\n", maxFirstOcc);
 		printf("minLongKmerOcc=%.2f\n", minLongKmerOcc);
+#endif
 	}
 
 	lockedReadsNumThres = averKmerOcc;
-	printf("lockedReadsNumThres=%.2f\n", lockedReadsNumThres);
 
 	// the global variables of reads number region
 	maxRegLenReadsNumReg = ceil(readLen * REG_LEN_READS_NUM_REG_FACTOR);
@@ -768,14 +880,16 @@ short initMemory()
 
 	lowOccThresNaviOccQueue = 0.4 * averKmerOcc;
 
+#if(DEBUG_PARA_PRINT==YES)
+	printf("lockedReadsNumThres=%.2f\n", lockedReadsNumThres);
 	printf("maxRegLenReadsNumReg=%d\n", maxRegLenReadsNumReg);
 	printf("minContigLenCheckingReadsNum=%d\n", minContigLenCheckingReadsNum);
 	printf("maxReadsNumRatioThres=%.2f\n", maxReadsNumRatioThres);
 	printf("minReadsNumRatioThres=%.2f\n", minReadsNumRatioThres);
-	printf("lowOccThresNaviOccQueue=%.2f\n", lowOccThresNaviOccQueue);
+	//printf("lowOccThresNaviOccQueue=%.2f\n", lowOccThresNaviOccQueue);
+#endif
 
-
-	hangingContigOutFlag = NO;
+	hangingContigOutFlag = HANGING_CONTIG_OUT_FLAG;
 	maxItemNumDecisionTable = TABLE_SIZE_ASSEMBLINGREAD;
 	//决策表相关变量初始化
 	decisionTable = (assemblingreadtype*) malloc(maxItemNumDecisionTable*sizeof(assemblingreadtype));
@@ -830,7 +944,7 @@ short initMemory()
 	}
 
 	//maxItemNumNaviOccQueue = MAX_ITEM_NUM_NAVI_OCC_QUEUE;
-	maxItemNumNaviOccQueue = readLen * 0.3;
+	maxItemNumNaviOccQueue = readLen * 0.5;
 	naviOccQueue = (double*) malloc(maxItemNumNaviOccQueue*sizeof(double));
 	if(naviOccQueue==NULL)
 	{
@@ -880,11 +994,50 @@ void freeMemory()
 	naviOccQueue = NULL;
 }
 
+/**
+ * Initialize the bounder for first k-mers.
+ *  @return:
+ *  	If succeeds, return SUCCESSFUL; otherwise, return FAILED.
+ */
+short initFirstKmerBounder(double *lowerBoundFirstKmer, double *upperBoundFirstKmer, short assemblyCycle, double averKmerOccNum)
+{
+	if(assemblyCycle==1)
+	{ // the first assembly cycle
+		*lowerBoundFirstKmer = averKmerOccNum * LOWER_BOUND_FACTOR_CYCLE1;
+		*upperBoundFirstKmer = averKmerOccNum * UPPER_BOUND_FACTOR_CYCLE1;
+
+		if((*lowerBoundFirstKmer)>MIN_LOWER_BOUND)
+			*lowerBoundFirstKmer = MIN_LOWER_BOUND;
+		else if((*lowerBoundFirstKmer)<MIN_LOWER_BOUND_RESCUE)
+			*lowerBoundFirstKmer = MIN_LOWER_BOUND_RESCUE;
+	}
+	else if(assemblyCycle==2)
+	{ // the second assembly cycle
+		*lowerBoundFirstKmer = averKmerOccNum * UPPER_BOUND_FACTOR_CYCLE1;
+		*upperBoundFirstKmer = averKmerOccNum * UPPER_BOUND_FACTOR_CYCLE2;
+	}
+//	else if(assemblyCycle==3)
+//	{
+//		*lowerBoundFirstKmer = LOWER_BOUND_CYCLE3;
+//		*upperBoundFirstKmer = averKmerOccNum * LOWER_BOUND_FACTOR_CYCLE1;
+//	}
+	else
+	{
+		printf("line=%d, In %s(), assemblyCycle=%d, error!\n", __LINE__, __func__, assemblyCycle);
+		return FAILED;
+	}
+
+#if(DEBUG_PARA_PRINT==YES)
+	printf("assemblyCycle=%d: lowerBoundFirstKmer=%.2f, upperBoundFirstKmer=%.2f, averKmerOcc=%.2f\n", assemblyCycle, *lowerBoundFirstKmer, *upperBoundFirstKmer, averKmerOccNum);
+#endif
+
+	return SUCCESSFUL;
+}
 
 /**
- * 初始化contig.
- *   @ return:
- *     成功, 返回成功标记; 失败, 返回失败标记.
+ * Initialize the contig.
+ *  @return:
+ *  	If succeeds, return SUCCESSFUL; otherwise, return FAILED.
  */
 short initContig(contigtype **contighead,contigtype **tailContig)
 {
@@ -930,34 +1083,34 @@ short initContig(contigtype **contighead,contigtype **tailContig)
  */
 short initFirstKmerThreshold()
 {
-	int i, filledBucketNum;
-	uint64_t tmp_kmerSum, tmp_kmerNum;
-	kmertype *kmer;
+//	int i, filledBucketNum;
+//	uint64_t tmp_kmerSum, tmp_kmerNum;
+//	kmertype *kmer;
 
-	filledBucketNum = 0;
-	tmp_kmerSum = tmp_kmerNum = 0;
-	for(i=0; i<hashTableSize; i++)
-	{
-		kmer = deBruijnGraph->pkmers[i];
-		if(kmer!=NULL)
-			filledBucketNum ++;
+//	filledBucketNum = 0;
+//	tmp_kmerSum = tmp_kmerNum = 0;
+//	for(i=0; i<hashTableSize; i++)
+//	{
+//		kmer = deBruijnGraph->pkmers[i];
+//		if(kmer!=NULL)
+//			filledBucketNum ++;
+//
+//		while(kmer)
+//		{
+//			tmp_kmerSum += kmer->arraysize;
+//			tmp_kmerNum ++;
+//
+//			kmer = kmer->next;
+//		}
+//	}
 
-		while(kmer)
-		{
-			tmp_kmerSum += kmer->arraysize;
-			tmp_kmerNum ++;
-
-			kmer = kmer->next;
-		}
-	}
-
-	averKmerOcc = (double)tmp_kmerSum / tmp_kmerNum;
+	averKmerOcc = (double)totalRidposNum / totalKmerNum;
 	if(averKmerOcc<1)
 		averKmerOcc = 1;
 
 	firstKmerThres = averKmerOcc;
 
-	//printf("filledBucketNum=%d, filledRatio=%.2f, kmerNum=%lu\n", filledBucketNum, (double)filledBucketNum/hashTableSize, tmp_kmerNum);
+	//printf("validReadNum=%lu, totalKmerNum=%lu, totalRidposNum=%lu\n", validReadNum, totalKmerNum, totalRidposNum);
 
 	//printf("averKmerOcc=%.2f.\n", averKmerOcc);
 	//printf("firstKmerThres=%.2f.\n", firstKmerThres);
@@ -998,7 +1151,8 @@ short getFirstKmers(uint64_t *kmerIndex, kmertype **firstKmer)
 				//########################## Debug information #############################
 
 				//if(kmer->multiplicity>=firstKmerThres && kmer->multiplicity>=FIRSTKMER_SUBTRACT_THRESHOLD*kmer->arraysize)
-				if(kmer->multiplicity>=firstKmerThres && kmer->multiplicity<=FIRSTKMER_FACTOR*firstKmerThres && kmer->multiplicity>=FIRSTKMER_SUBTRACT_THRESHOLD*kmer->arraysize)
+				//if(kmer->multiplicity>=firstKmerThres && kmer->multiplicity<=FIRSTKMER_FACTOR*firstKmerThres && kmer->multiplicity>=FIRSTKMER_SUBTRACT_THRESHOLD*kmer->arraysize)  // deleted 2012-11-28
+				if(kmer->multiplicity>=lowerBoundFirstKmer && kmer->multiplicity<=upperBoundFirstKmer && kmer->multiplicity>=FIRSTKMER_SUBTRACT_THRESHOLD*kmer->arraysize)  // added 2012-11-28
 				{
 					if(containFirstPos(kmer)==YES)
 					{
@@ -1153,7 +1307,7 @@ short containLastPos(kmertype *kmer)
  *  @return:
  *  	If succeeds, return SUCCESSFUL; otherwise, return FAILED.
  */
-int addFirstKmerToDecisionTable(kmertype **kmers)
+short addFirstKmerToDecisionTable(kmertype **kmers)
 {
 	ridpostype *ridpostable;
 	unsigned int i, rpos, posNum;
@@ -1219,7 +1373,7 @@ int addFirstKmerToDecisionTable(kmertype **kmers)
  *  @return:
  *  	If succeeds, return SUCCESSFUL; otherwise, return FAILED.
  */
-int addReadToDecisionTable(uint64_t rid, int rpos, int orientation, int matedFlag)
+short addReadToDecisionTable(uint64_t rid, int rpos, int orientation, int matedFlag)
 {
 	assemblingreadtype *this_assemblingRead = decisionTable + itemNumDecisionTable;
 
@@ -1264,7 +1418,7 @@ int addReadToDecisionTable(uint64_t rid, int rpos, int orientation, int matedFla
  *  @return:
  *  	If succeeds, return SUCCESSFUL; otherwise, return FAILED.
  */
-int reallocateDecisionTable()
+short reallocateDecisionTable()
 {
 	assemblingreadtype *tmp_pDecisionTable;
 	tmp_pDecisionTable = (assemblingreadtype*) malloc (2*maxItemNumDecisionTable * sizeof(assemblingreadtype));
@@ -1309,6 +1463,11 @@ short getNextKmerBySE(int contigNodesNum)
 		kmers[0] = kmers[1] = NULL;
 		return SUCCESSFUL;
 	}
+
+	maxOccIndexSE = -1;
+	maxOccSE = 0;
+	secondOccIndexSE = -1;
+	secondOccSE = 0;
 
 	//将8个正反向kmer添加进临时数组tmp_kmers
 	for(i=0; i<4; i++)
@@ -1416,22 +1575,22 @@ short getNextKmerBySE(int contigNodesNum)
 				//修剪kmer连接数小于阈值的kmers
 				if(tmp_kmers[i][0]!=NULL && tmp_kmers[i][1]!=NULL)
 				{
-					if(tmp_kmers[i][0]->multiplicity+tmp_kmers[i][1]->multiplicity<minKmerOccSE)
-					//if(tmp_kmers[i][0]->multiplicity+tmp_kmers[i][1]->multiplicity<=0)
+					//if(tmp_kmers[i][0]->multiplicity+tmp_kmers[i][1]->multiplicity<minKmerOccSE)
+					if(tmp_kmers[i][0]->multiplicity+tmp_kmers[i][1]->multiplicity<=0)
 					{
 						continue;
 					}
 				}else if(tmp_kmers[i][0]!=NULL)
 				{
-					if(tmp_kmers[i][0]->multiplicity<minKmerOccSE)
-					//if(tmp_kmers[i][0]->multiplicity<=0)
+					//if(tmp_kmers[i][0]->multiplicity<minKmerOccSE)
+					if(tmp_kmers[i][0]->multiplicity<=0)
 					{
 						continue;
 					}
 				}else if(tmp_kmers[i][1]!=NULL)
 				{
-					if(tmp_kmers[i][1]->multiplicity<minKmerOccSE)
-					//if(tmp_kmers[i][1]->multiplicity<=0)
+					//if(tmp_kmers[i][1]->multiplicity<minKmerOccSE)
+					if(tmp_kmers[i][1]->multiplicity<=0)
 					{
 						continue;
 					}
@@ -1558,6 +1717,8 @@ short getNextKmerBySE(int contigNodesNum)
 		{
 			if(secondOccSE/maxOccSE>SECOND_FIRST_OCC_FAILED_RATIO)
 				validKmerNum = 0;
+			else if(secondOccSE>0 && maxOccSE-secondOccSE<2)
+				validKmerNum = 0;
 		}
 
 
@@ -1626,7 +1787,9 @@ short getNextKmerBySE(int contigNodesNum)
 		}
 		//***********************************************************************************
 	}
+
 	kmers[0] = kmers[1] = NULL;
+
 	return SUCCESSFUL;
 }
 
@@ -1636,7 +1799,7 @@ short getNextKmerBySE(int contigNodesNum)
  * 	@return:
  * 		If succeeds, return SUCCSEEFUL; otherwise, return FAILED.
  */
-int computeLongKmerOccNum(kmertype *tmp_kmers[2], int *occNum, int length_k)
+short computeLongKmerOccNum(kmertype *tmp_kmers[2], int *occNum, int length_k)
 {
 	assemblingreadtype *this_assemblingRead = NULL;
 	ridpostype *rid_pos = NULL;
@@ -1757,8 +1920,8 @@ int computeLongKmerOccNum(kmertype *tmp_kmers[2], int *occNum, int length_k)
 	}// end for(i)
 
 #if 1
-	//if(length_k<kmerSize+longKmerStepSize)
-	if(length_k==kmerSize)
+	if(length_k<kmerSize+longKmerStepSize)
+	//if(length_k==kmerSize)
 	{
 		if(tmp_kmers[0])
 		{ //正向kmer不为空
@@ -1806,7 +1969,7 @@ int computeLongKmerOccNum(kmertype *tmp_kmers[2], int *occNum, int length_k)
  *  @return:
  *   	If succeeds, return SUCCSEEFUL; otherwise, return FAILED.
 */
-int computeKmerOccNum(kmertype *tmp_kmers[2], int *occNum)
+short computeKmerOccNum(kmertype *tmp_kmers[2], int *occNum)
 {
 	//if(lockedReadsNum>=KOCKED_READS_NUM_THRESHOLD)
 	if(lockedReadsNum>=lockedReadsNumThres)
@@ -1834,7 +1997,7 @@ int computeKmerOccNum(kmertype *tmp_kmers[2], int *occNum)
  *  @return:
  *  	If succeeds, return SUCCESSFUL; otherwise, return FAILED.
  */
-int computeKmerOccNumUnlocked(kmertype *tmp_kmers[2], int *occNum)
+short computeKmerOccNumUnlocked(kmertype *tmp_kmers[2], int *occNum)
 {
 	assemblingreadtype *this_assemblingRead = NULL;
 	ridpostype *rid_pos = NULL;
@@ -1992,7 +2155,7 @@ int computeKmerOccNumUnlocked(kmertype *tmp_kmers[2], int *occNum)
  *  @return:
  *  	If succeeds, return SUCCESSFUL; otherwise, return FAILED.
  */
-int computeKmerOccNumLocked(kmertype *tmp_kmers[2], int *occNum)
+short computeKmerOccNumLocked(kmertype *tmp_kmers[2], int *occNum)
 {
 	assemblingreadtype *this_assemblingRead = NULL;
 	ridpostype *rid_pos = NULL;
@@ -2884,7 +3047,7 @@ short delRemainedKmers(char *seq, uint64_t *tmp_kmerseq, uint64_t rid, uint16_t 
  *  @return:
  *  	If succeeds, return SUCCESSFUL; otherwise, return FAILED.
  */
-int updateLockedReads()
+short updateLockedReads()
 {
 	assemblingreadtype *this_assemblingRead;
 
@@ -4103,7 +4266,7 @@ short initSecondAssembly()
 		//删除contig链表两端的不准确的碱基
 		if(trimContigBeforeCycle2(&contighead, &contigtail, &successContig, &contigIndex)==FAILED)
 		{
-			printf("In buildContigds(), contigsNum==%d, contigIndex=%d, cannot trim the Contig before 2nd round assembly, Error!\n", contigsNum+1, contigIndex);
+			printf("line=%d, In %s(), contigsNum==%d, contigIndex=%d, cannot trim the Contig before 2nd round assembly, Error!\n", __LINE__, __func__, contigsNum+1, contigIndex);
 			return ERROR;
 		}
 	}else if(successContig==NULL)
@@ -4129,7 +4292,8 @@ short initSecondAssembly()
 
 	//====================================================
 	// trim a read length of contig nodes at tail
-	if(contigIndex>=3*readLen)
+	//if(averKmerOcc>10 && contigIndex>=3*readLen)  // deleted 2012-11-28
+	if(trimReadLenFlag==YES)						// added 2012-11-28
 	{
 		if(trimContigTailByReadLen(contighead, &contigtail, &successContig, &contigIndex, FIRST_ROUND_ASSEMBLY)==FAILED)
 		{
@@ -4241,10 +4405,11 @@ short initSecondAssembly()
  *  @return:
  *  	If succeeds, return SUCCESSFUL; otherwise, return FAILED.
  */
-int updateReadsNumReg(int itemNumSuccessReadsArr, int contigNodesNum, int assemblyRound)
+short updateReadsNumReg(int itemNumSuccessReadsArr, int contigNodesNum, int assemblyRound)
 {
 	int contigIndexLeft, contigIndexRight;
 	contigtype *contig;
+	//double averOccNumNaviOccQueue;
 
 	if(contigNodesNum>minContigLenCheckingReadsNum)
 	{ // only slide the region
@@ -4326,13 +4491,99 @@ int updateReadsNumReg(int itemNumSuccessReadsArr, int contigNodesNum, int assemb
 
 	// compute the ratio of read numbers, and decide whether the assembly should be terminated
 	readsNumRatio = (double)readsNumReadsNumReg * contigNodesNum / (readsNumTotal * regLenReadsNumReg);
+	//if(readsNumRatio>maxReadsNumRatioThres || readsNumRatio<minReadsNumRatioThres)
 	if(readsNumRatio>maxReadsNumRatioThres || readsNumRatio<minReadsNumRatioThres)
-	//if(readsNumRatio>maxReadsNumRatioThres)
 	{
-		solvedRepeatsNum ++;
-		readsNumTotal = readsNumReadsNumReg = 0;
-		leftContigReadsNumReg = rightContigReadsNumReg = NULL;
-		kmers[0] = kmers[1] = NULL;
+		//if((navigationFlag==NAVI_PE_FLAG && secondOccIndexPE>minKmerOccPE) || (navigationFlag==NAVI_SE_FLAG && secondOccIndexSE>minKmerOccSE))
+		if((navigationFlag==NAVI_PE_FLAG && secondOccPE/maxOccPE>0.5) || (navigationFlag!=NAVI_PE_FLAG && secondOccSE/maxOccSE>0.5))
+		//if((navigationFlag==NAVI_PE_FLAG && secondOccPE/maxOccPE>SECOND_FIRST_OCC_FAILED_RATIO) || (navigationFlag!=NAVI_PE_FLAG && secondOccSE/maxOccSE>SECOND_FIRST_OCC_FAILED_RATIO))
+		{
+			if(navigationFlag==NAVI_MIX_FLAG)
+			{
+				if(maxOccIndexPE!=maxOccIndexSE)
+				{
+					solvedRepeatsNum ++;
+					readsNumTotal = readsNumReadsNumReg = 0;
+					leftContigReadsNumReg = rightContigReadsNumReg = NULL;
+					kmers[0] = kmers[1] = NULL;
+				}
+			}else
+			{
+				solvedRepeatsNum ++;
+				readsNumTotal = readsNumReadsNumReg = 0;
+				leftContigReadsNumReg = rightContigReadsNumReg = NULL;
+				kmers[0] = kmers[1] = NULL;
+			}
+		}
+		else if(successContig!=NULL && contigIndex-successContig->index > 0.4*readLen)
+		{
+/*
+			if(calcAverOccNaviOccQueue(&averOccNumNaviOccQueue, naviOccQueue, itemNumNaviOccQueue)==FAILED)
+			{
+				printf("line=%d, In %s(), cannot compute the average occurrence in navigation occurrence queue, error!\n", __LINE__, __func__);
+				return FAILED;
+			}
+
+			if(averOccNumNaviOccQueue < 2 && readsNumRatio < 0.2*minReadsNumRatioThres)
+			{
+				solvedRepeatsNum ++;
+				readsNumTotal = readsNumReadsNumReg = 0;
+				leftContigReadsNumReg = rightContigReadsNumReg = NULL;
+				kmers[0] = kmers[1] = NULL;
+			}
+*/
+/*
+			else if(readsNumRatio<0.2*minReadsNumRatioThres)
+			{
+				// compute the maximal gap size in contig tail region
+				if(computeGapSizeInContig(&tmp_gapSize, contighead, contig36, contigNodesNum, assemblyRound)==FAILED)
+				{
+					printf("line=%d, In %s(), cannot compute the gap size, error!\n", __LINE__, __func__);
+					return FAILED;
+				}
+
+				if(tmp_gapSize>0.6*readLen)
+				{
+					kmers[0] = kmers[1] = NULL;
+				}
+			}
+*/
+
+/*
+			if(navigationFlag==NAVI_MIX_FLAG)
+			{
+				if(((maxOccIndexPE!=-1 && maxOccPE < minKmerOccPE) || (maxOccIndexSE!=-1 && maxOccSE < minKmerOccSE)) && readsNumRatio < 0.2*minReadsNumRatioThres && averOccNumNaviOccQueue<2)
+				//if(((maxOccIndexPE!=-1 && maxOccPE < minKmerOccPE) || (maxOccIndexSE!=-1 && maxOccSE < minKmerOccSE)) && readsNumRatio < 0.2*minReadsNumRatioThres)
+				{
+					solvedRepeatsNum ++;
+					readsNumTotal = readsNumReadsNumReg = 0;
+					leftContigReadsNumReg = rightContigReadsNumReg = NULL;
+					kmers[0] = kmers[1] = NULL;
+				}
+			}else if(navigationFlag==NAVI_PE_FLAG)
+			{
+				if((maxOccIndexPE!=-1 && maxOccPE < minKmerOccPE) && readsNumRatio < 0.2*minReadsNumRatioThres && averOccNumNaviOccQueue<2)
+				//if((maxOccIndexPE!=-1 && maxOccPE < minKmerOccPE) && readsNumRatio < 0.2*minReadsNumRatioThres)
+				{
+					solvedRepeatsNum ++;
+					readsNumTotal = readsNumReadsNumReg = 0;
+					leftContigReadsNumReg = rightContigReadsNumReg = NULL;
+					kmers[0] = kmers[1] = NULL;
+				}
+			}else if(navigationFlag==NAVI_SE_FLAG)
+			{
+				if((maxOccIndexSE!=-1 && maxOccSE < minKmerOccSE) && readsNumRatio < 0.2*minReadsNumRatioThres && averOccNumNaviOccQueue<2)
+				//if((maxOccIndexSE!=-1 && maxOccSE < minKmerOccSE) && readsNumRatio < 0.2*minReadsNumRatioThres)
+				{
+					solvedRepeatsNum ++;
+					readsNumTotal = readsNumReadsNumReg = 0;
+					leftContigReadsNumReg = rightContigReadsNumReg = NULL;
+					kmers[0] = kmers[1] = NULL;
+				}
+			}
+*/
+
+		}
 	}
 
 	return SUCCESSFUL;
@@ -4344,7 +4595,7 @@ int updateReadsNumReg(int itemNumSuccessReadsArr, int contigNodesNum, int assemb
  *  @return:
  *  	If succeeds, return SUCCESSFUL; otherwise, return FAILED.
  */
-int initReadsNumRegSecondAssembly(int contigNodesNum)
+short initReadsNumRegSecondAssembly(int contigNodesNum)
 {
 	int contigIndexLeft, contigIndexRight;
 	contigtype *contig;

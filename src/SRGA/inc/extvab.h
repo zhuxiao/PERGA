@@ -33,6 +33,7 @@ int readLenCutOff;					// the read length after cutting at the 3' end of reads
 extern int pairedMode;
 extern double meanSizeInsert, standardDev;
 extern int minContigLen;
+extern int trimReadLenFlag;
 
 
 //**************** for graph.c *******************
@@ -40,12 +41,15 @@ extern graphtype *deBruijnGraph;
 
 extern double timeuse_deBruijn;
 //extern long int countMemory;
-extern long newKmerNum;
-extern long newRidposNum;
-extern long totalReadNum, validReadNum;  //reads总数, 有效reads总数, 未拼接的reads总数
+extern uint64_t totalKmerNum;
+extern uint64_t totalRidposNum;
+extern uint64_t totalReadNum, validReadNum;  //reads总数, 有效reads总数, 未拼接的reads总数
 
 //**************** for contig.c *******************
-extern int readLenInFile;
+//extern int readLenInFile;
+extern int maxReadLenInFile;				// the maximal length of read length in file
+extern int minReadLenInFile;				// the minimal length of read length in file
+extern int averReadLenInFile;				// the average length of read length in file
 extern int readLenCutOff;
 
 extern int qualityBaseNumEnd3;
@@ -80,9 +84,11 @@ extern int occsNumSE[4], occsNumPE[4];  //下一个kmer的得分，对应ACGT的
 extern int maxOccIndexSE, maxOccIndexPE, secondOccIndexSE, secondOccIndexPE;
 extern double maxOccSE, maxOccPE, secondOccSE, secondOccPE;
 
+extern short assemblyCycle;	// values: 1 for 0.5x <= firstKmerThres <= 15x, 2 for firstKmerThres > 15x, 3 for 2 <= firstKmerThres < 0.5x
 extern short assemblyRound; //FRIST_ROUND_ASSEMBLY  or SECOND_ROUND_ASSEMBLY
 extern int lockedReadsNum;
 extern kmertype *kmers[2]; //kmers[0]存放正向的kmer, kmers[1]存放反向互补的kmer
+extern double lowerBoundFirstKmer, upperBoundFirstKmer;
 
 extern assemblingreadtype *decisionTable;		// the decision table
 extern int itemNumDecisionTable;				// item number in decision table

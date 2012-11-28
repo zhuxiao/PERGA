@@ -7,7 +7,7 @@
  *  @return:
  *  	If succeeds, return SUCCESSFUL; otherwise, return FAILED.
  */
-int updateDecisionTable(kmertype *tmp_kmers[2])
+short updateDecisionTable(kmertype *tmp_kmers[2])
 {
 	int i, j, startIndex, exectIndex, posNum;
 	ridpostype *ridpostable = NULL;  //ridpostable表
@@ -292,7 +292,7 @@ int updateDecisionTable(kmertype *tmp_kmers[2])
  *  @return:
  *  	If succeeds, return SUCCESSFUL; otherwise, return FAILED.
  */
-int updateFinishedReadsInDecisionTable()
+short updateFinishedReadsInDecisionTable()
 {
 	int i;
 
@@ -342,7 +342,7 @@ int updateFinishedReadsInDecisionTable()
  *  @return:
  *  	If succeeds, return SUCCESSFUL; otherwise, return FAILED.
  */
-int reallocateSuccessReadsArr()
+short reallocateSuccessReadsArr()
 {
 	successRead_t *pSuccessReadsArr;
 
@@ -371,7 +371,7 @@ int reallocateSuccessReadsArr()
  *  @return:
  *  	If succeeds, return SUCCESSFUL; otherwise, return FAILED.
  */
-int removeFinishedReadsFromDecisionTable()
+short removeFinishedReadsFromDecisionTable()
 {
 	int i , j ;
 	i = 0;

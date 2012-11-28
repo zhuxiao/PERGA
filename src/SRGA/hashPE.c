@@ -14,7 +14,7 @@
  *  @return:
  *  	If succeeds, return SUCCESSFUL; otherwise, return FAILED.
  */
-int estimateInsertSizeAndSdev()
+short estimateInsertSizeAndSdev()
 {
 	printf("Begin estimating the insert size and standard deviation of paired end fragment library ...\n");
 
@@ -78,7 +78,7 @@ int estimateInsertSizeAndSdev()
  *  @return:
  *  	If succeeds, return SUCCESSFUL; otherwise, return FAILED.
  */
-int initPEHashParas()
+short initPEHashParas()
 {
 	if(PEGivenType==INSERT_PE_GIVEN_TYPE)
 	{
@@ -104,6 +104,12 @@ int initPEHashParas()
 		}
 		maxRegLenPEHash = maxMarginLenPEHash - minContigLenUsingPE + 1;
 		minRegLenUsingPE = maxRegLenPEHash * REG_LEN_PE_HASH_FACTOR;
+
+#if (DEBUG_PARA_PRINT==YES)
+		printf("minContigLenUsingPE=%d\n", minContigLenUsingPE);
+		printf("maxRegLenPEHash=%d\n", maxRegLenPEHash);
+		printf("minRegLenUsingPE=%d\n", minRegLenUsingPE);
+#endif
 	}
 
 	// ######################### Debug information ##########################
@@ -123,7 +129,7 @@ int initPEHashParas()
  *  @return:
  *  	If succeeds, return SUCCESSFUL; otherwise, return FAILED.
  */
-int updatePEHashTable(int contigNodesNum, int assemblyRound)
+short updatePEHashTable(int contigNodesNum, int assemblyRound)
 {
 	contigtype *tmpContig;
 	int i, newContigIndex, ridposnum;
@@ -326,7 +332,7 @@ int updatePEHashTable(int contigNodesNum, int assemblyRound)
  *  @return:
  *  	If succeeds, return SUCCESSFUL; otherwise, return FAILED.
  */
-int getReadFromPEHashtable(PERead_t **pRead, uint64_t readID)
+short getReadFromPEHashtable(PERead_t **pRead, uint64_t readID)
 {
 	uint64_t hashcode;
 
@@ -355,7 +361,7 @@ int getReadFromPEHashtable(PERead_t **pRead, uint64_t readID)
  *  @return:
  *  	If succeeds, return SUCCESSFUL; otherwise, return FAILED.
  */
-int addReadToPEHashtable(successRead_t *ridposOrient, int contigPos, int assemblyRound)
+short addReadToPEHashtable(successRead_t *ridposOrient, int contigPos, int assemblyRound)
 {
 	uint64_t hashcode;
 	PERead_t *tmpRead;
@@ -405,7 +411,7 @@ int addReadToPEHashtable(successRead_t *ridposOrient, int contigPos, int assembl
  *  @return:
  *  	If succeeds, return SUCCESSFUL; otherwise, return FAILED.
  */
-int delReadfromPEHashtable(uint64_t readID)
+short delReadfromPEHashtable(uint64_t readID)
 {
 	uint64_t hashcode;
 	PERead_t *tmpRead, *preRead;
@@ -460,7 +466,7 @@ int delReadfromPEHashtable(uint64_t readID)
  *  @return:
  *  	If succeeds, return SUCCESSFUL; otherwise, return FAILED.
  */
-int cleanReadsFromPEHashtable()
+short cleanReadsFromPEHashtable()
 {
 	int i;
 	PERead_t *tmpRead, *head;
@@ -507,7 +513,7 @@ int cleanReadsFromPEHashtable()
  *  @return:
  *  	If succeeds, return SUCCESSFUL; otherwise, return FAILED.
  */
-int initPEHashtableSecondAssembly(contigtype *contighead, int contigNodesNum)
+short initPEHashtableSecondAssembly(contigtype *contighead, int contigNodesNum)
 {
 	int i, tmpLeftContigIndex, tmpRightContigIndex;
 	contigtype *tmpContig;
@@ -660,7 +666,7 @@ int initPEHashtableSecondAssembly(contigtype *contighead, int contigNodesNum)
  *  @return:
  *  	If succeeds, return SUCCESSFUL; otherwise, return FAILED.
  */
-int meanSizeInsertAndSdevEstimation(const char *fragmentSizeFile, estContig_t *estContigArray, int contigNumEstContigArray)
+short meanSizeInsertAndSdevEstimation(const char *fragmentSizeFile, estContig_t *estContigArray, int contigNumEstContigArray)
 {
 	int i;
 	FILE *fpFragmentSize;
@@ -722,6 +728,10 @@ int meanSizeInsertAndSdevEstimation(const char *fragmentSizeFile, estContig_t *e
 	oldPEGivenType = PEGivenType;
 	PEGivenType = BOTH_PE_GIVEN_TYPE;
 
+#if	(DELETE_TMP_FILES==YES)
+	remove(fragmentSizeFile);
+#endif
+
 	return SUCCESSFUL;
 }
 
@@ -730,7 +740,7 @@ int meanSizeInsertAndSdevEstimation(const char *fragmentSizeFile, estContig_t *e
  *  @return:
  *  	If succeeds, return SUCCESSFUL; otherwise, return FAILED.
  */
-int getPairedEndsFromSingleContig(FILE *fpFragSize, estContig_t *estContig)
+short getPairedEndsFromSingleContig(FILE *fpFragSize, estContig_t *estContig)
 {
 	// initialize the memory
 	if(initMemGetPESingleContig(estContig)==FAILED)
@@ -786,7 +796,7 @@ int getPairedEndsFromSingleContig(FILE *fpFragSize, estContig_t *estContig)
  *  @return:
  *  	If succeeds, return SUCCESSFUL; otherwise, return FAILED.
  */
-int initMemGetPESingleContig(estContig_t *estContig)
+short initMemGetPESingleContig(estContig_t *estContig)
 {
 	// get the total reads number in single contig
 	if(getTotalReadsNumOfSingleContig(&readsNumSingleContig, estContig->contighead)==FAILED)
@@ -854,7 +864,7 @@ void freeMemGetPESingleContig()
  *  @return:
  *  	If succeeds, return SUCCESSFUL; otherwise, return FAILED.
  */
-int getTotalReadsNumOfSingleContig(int64_t *totalReadsNum, contigtype *contighead)
+short getTotalReadsNumOfSingleContig(int64_t *totalReadsNum, contigtype *contighead)
 {
 	contigtype *contig;
 
@@ -877,7 +887,7 @@ int getTotalReadsNumOfSingleContig(int64_t *totalReadsNum, contigtype *contighea
  *  @return:
  *  	If succeeds, return SUCCESSFUL; otherwise, return FAILED.
  */
-int fillDataReadPosTmpArr(readPosTemp_t *readPosTmpArray, contigtype *contighead)
+short fillDataReadPosTmpArr(readPosTemp_t *readPosTmpArray, contigtype *contighead)
 {
 	int64_t tmpReadsNum;
 	int i, ridposnum;
@@ -928,7 +938,7 @@ int fillDataReadPosTmpArr(readPosTemp_t *readPosTmpArray, contigtype *contighead
  *  @return:
  *  	If succeeds, return SUCCESSFUL; otherwise, return FAILED.
  */
-int radixSortReadPosTmpArr(readPosTemp_t *readPosTmpArray, readPosTemp_t *readPosTmpArrayBuf, int64_t readsNumInArray)
+short radixSortReadPosTmpArr(readPosTemp_t *readPosTmpArray, readPosTemp_t *readPosTmpArrayBuf, int64_t readsNumInArray)
 {
 	struct partNode
 	{
@@ -1029,7 +1039,7 @@ int radixSortReadPosTmpArr(readPosTemp_t *readPosTmpArray, readPosTemp_t *readPo
  *  @return:
  *  	If succeeds, return SUCCESSFUL; otherwise, return FAILED.
  */
-int fillDataReadList(readList_t *readListArray, readPos_t *readPosArray, int64_t *itemNumInReadListArray, int64_t *itemNumInReadPosArray, readPosTemp_t *readPosTmpArray, int64_t itemNumInReadPosTmpArray)
+short fillDataReadList(readList_t *readListArray, readPos_t *readPosArray, int64_t *itemNumInReadListArray, int64_t *itemNumInReadPosArray, readPosTemp_t *readPosTmpArray, int64_t itemNumInReadPosTmpArray)
 {
 	int64_t i, j;
 	int sameItemNum;
@@ -1084,7 +1094,7 @@ int fillDataReadList(readList_t *readListArray, readPos_t *readPosArray, int64_t
  *  @return:
  *  	If succeeds, return SUCCESSFUL; otherwise, return FAILED.
  */
-int outputInsertSizeToFile(FILE *fpFragSize, readList_t *readListArray, readPos_t *readPosArray, int64_t itemNumInReadListArray)
+short outputInsertSizeToFile(FILE *fpFragSize, readList_t *readListArray, readPos_t *readPosArray, int64_t itemNumInReadListArray)
 {
 	int64_t i;
 	int32_t fragmentSize;
@@ -1153,12 +1163,13 @@ int outputInsertSizeToFile(FILE *fpFragSize, readList_t *readListArray, readPos_
  *  @return:
  *  	If succeeds, return SUCCESSFUL; otherwise, return FAILED.
  */
-int computeInsertSizeAndSdev(double *meanSizeInsert, double *standardDev, const char *fragmentSizeFile)
+short computeInsertSizeAndSdev(double *meanSizeInsert, double *standardDev, const char *fragmentSizeFile)
 {
 	int64_t fragNum, fragNum2;
 	FILE *fpFragSize;
 	int32_t fragmentSize;
 	double tmpInsertSize, tmpSdev;
+	int32_t longFragNum;
 
 	fpFragSize = fopen(fragmentSizeFile, "rb");
 	if(fpFragSize==NULL)
@@ -1168,6 +1179,7 @@ int computeInsertSizeAndSdev(double *meanSizeInsert, double *standardDev, const 
 	}
 
 	// estimate the insert size
+	longFragNum = 0;
 	fragNum = 0;
 	tmpInsertSize = 0;
 	while(1)
@@ -1183,10 +1195,23 @@ int computeInsertSizeAndSdev(double *meanSizeInsert, double *standardDev, const 
 			}
 		}
 
-		tmpInsertSize += fragmentSize;
-		fragNum ++;
+		// ######################## Debug information #####################
+		if(fragmentSize<=MAX_INSERT_SIZE_THRES)
+		{
+			tmpInsertSize += fragmentSize;
+			fragNum ++;
+		}else
+		{
+			longFragNum ++;
+			//printf("fragmentSize=%d\n", fragmentSize);
+		}
+		// ######################## Debug information #####################
+
 	}
 	*meanSizeInsert = tmpInsertSize / fragNum;
+
+//	if(longFragNum>0)
+//		printf("longFragNum=%d\n", longFragNum);
 
 	if(fragNum<=1)
 	{
@@ -1211,8 +1236,11 @@ int computeInsertSizeAndSdev(double *meanSizeInsert, double *standardDev, const 
 			}
 		}
 
-		tmpSdev += (fragmentSize - *meanSizeInsert) * (fragmentSize - *meanSizeInsert);
-		fragNum2 ++;
+		if(fragmentSize<=MAX_INSERT_SIZE_THRES)
+		{
+			tmpSdev += (fragmentSize - *meanSizeInsert) * (fragmentSize - *meanSizeInsert);
+			fragNum2 ++;
+		}
 	}
 	*standardDev = sqrt(tmpSdev / (fragNum-1));
 

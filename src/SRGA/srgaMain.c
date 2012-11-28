@@ -35,7 +35,7 @@ int main(int argc, char** argv)
  *  	(4)-f <FILES>
  *  		Read files.
  *  	(5) -q <INT>
- *  		Single base quality threshold. Reads with single bases Phred quality < INT will be discarded. Default is 3.
+ *  		Single base quality threshold. Reads with single bases Phred quality < INT will be discarded. Default is 2.
  *  	(6) -ins_len <FLOAT>
  *  		Insert size for paired end library.
  *  	(7) -ins_sdev <FLOAT>
@@ -468,7 +468,7 @@ short parseCommandParasAndExe(int argc, char **argv)
 
 		if(operationModepara==2 && strlen(graphFilePara)==0)
 		{
-			printf("Exception: please specify the graph file.\n");
+			printf("Exception: please specify the hash table file.\n");
 			return FAILED;
 		}
 
@@ -515,7 +515,7 @@ short showUsageInfo()
 	printf("    -f <FILES>         Read files. It is necessary to be specified for commands\n"
 		   "                       'all' and 'graph'.\n");
 	printf("    -q <INT>           Single base quality threshold. Reads with single base\n"
-		   "                       Phred quality < INT will be discarded. Default is 3.\n");
+		   "                       Phred quality < INT will be discarded. Default is 2.\n");
 	printf("    -o <STR>           Prefix of the output files.\n");
 	printf("    -d <STR>           Output directory for the output files. Default is \"./\"\n");
 	printf("    -h\n");

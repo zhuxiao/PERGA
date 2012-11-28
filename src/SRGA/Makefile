@@ -1,7 +1,7 @@
 SRGA: srgaMain.o srga.o graph.o contig.o update.o  util.o hashPE.o PEAssembly.o
-	gcc -g -o $@ $^ -lm  # $@:目标文件; $^:所有依赖文件
+	gcc -g -o $@ $^ -lm  # $@:target; $^:dependences
 	rm *.o
-.c.o:  #所有的.o文件都要依赖于相应的.c文件
+.c.o:  # .o files rely on the corresponding .c files
 	gcc -g -c $< -lm
 
 clean:

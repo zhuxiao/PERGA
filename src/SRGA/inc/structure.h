@@ -78,6 +78,7 @@ typedef struct PEReadNode
 typedef struct readBufNode{
 	char *seq;
 	char *qual;
+	int len;
 }readBuf_t;
 
 typedef struct estContigNode
@@ -112,6 +113,9 @@ typedef struct readPosNode
 	uint16_t orientation;		// the read orientation
 	uint16_t matchBaseNum;		// the matched base number
 }readPos_t;
+
+
+
 
 
 #endif // STRUCTURE_H_INCLUDED
