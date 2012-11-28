@@ -657,8 +657,8 @@ short localAssemblyInScaf()
 				localScafContigNodesNumArr[0] = localScafContigNodesNumArr[1] = 0;
 
 				//###################### Debug information #####################
-#if DEBUG_OUT_FLAG
-				if(contigID[0]==2165 && contigID[1]==1866)
+#if DEBUG_FLAG
+				if(contigID[0]==2 && contigID[1]==3)
 				//if(contigID[0]==602 && contigID[1]==2445)
 				{
 					printf("line=%d, In %s(), contigID1=%d, contigOrient1=%d, contigLen1=%d, contigID2=%d, contigOrient2=%d, contigLen2=%d, gapSize=%d\n", __LINE__, __func__, contigID[0], contigOrient[0], contigLen[0], contigID[1], contigOrient[1], contigLen[1], gapSize);
@@ -897,6 +897,7 @@ short localAssemblyInScaf()
 						//######################### Debug information #####################
 
 						if(scafContigIndex >= minAssemblyLen)
+						//if(scafContigIndex >= readLen)  // 2012-11-19
 						{ // the contig nodes number is more than the minimal assembly length
 							// detect overlaps of contig ends in local assembly
 							if(detectOverlapsInScaf(&successFilledFlag, &overlapLen, &newGapSize, &breakFlag, gapSize, localScafContigNodesNumArr, assemblyRound)==FAILED)
@@ -954,18 +955,29 @@ short localAssemblyInScaf()
 #endif
 					// ######################### Debug information ########################
 
+					//if(scafContigIndex >= minAssemblyLen)
+					//if(localScafContigNodesNumArr[0]+localScafContigNodesNumArr[1] > readLen)  // 2012-11-19
+					{ // the contig nodes number is more than the minimal assembly length
+						// detect overlaps of contig ends in local assembly
+						if(detectOverlapsInScaf(&successFilledFlag, &overlapLen, &newGapSize, &breakFlag, gapSize, localScafContigNodesNumArr, assemblyRound)==FAILED)
+						{
+							printf("line=%d, In %s(), cannot detect overlaps between contig ends, error!\n", __LINE__, __func__);
+							return FAILED;
+						}
+					}
+
 					// To do ...
 					if(localScafContigNodesNumArr[0] > prepareAssemblyLenArr[0] || localScafContigNodesNumArr[1] > prepareAssemblyLenArr[1])
 					{ // new bases are appended
-						if(scafContigIndex < minAssemblyLen)
-						{
-							// compute the new gap size
-							if(computeNewGapSizeInScaf(&newGapSize, gapSize, localScafContigNodesNumArr, assemblyRound)==FAILED)
-							{
-								printf("line=%d, In %s(), cannot compute new gap size, error!\n", __LINE__, __func__);
-								return FAILED;
-							}
-						}
+//						if(scafContigIndex < minAssemblyLen)
+//						{
+//							// compute the new gap size
+//							if(computeNewGapSizeInScaf(&newGapSize, gapSize, localScafContigNodesNumArr, assemblyRound)==FAILED)
+//							{
+//								printf("line=%d, In %s(), cannot compute new gap size, error!\n", __LINE__, __func__);
+//								return FAILED;
+//							}
+//						}
 
 						// update overlap information
 						if(updateContigOverlapInfoInScaf(pContigOverlapInfo+j, successFilledFlag, overlapLen, newGapSize, breakFlag)==FAILED)
@@ -3585,7 +3597,17 @@ short detectOverlapsInScaf(int *successFilledFlag, int *overlapLen, int *newGapS
 		return FAILED;
 	}
 
-	if(tmpGapSize<=stardardDeviationInsert)
+	if((gapSize>0.6*meanSizeInsert && gapSize>2*averReadLen) && tmpGapSize>averReadLen) // 2012-11-19
+	{
+#if (DEBUG_FLAG==YES)
+		printf("line=%d, In %s(), broken.\n", __LINE__, __func__);
+#endif
+		*overlapLen = 0;
+		*newGapSize = tmpGapSize;
+		*successFilledFlag = NO;
+		*breakFlag = YES;
+	}
+	else if(tmpGapSize<=stardardDeviationInsert)
 	{
 		// compute the overlap length by exact alignment
 		if(computeSeqOverlapLenExact(&overlapLenExact, contigEndSeq, *contigEndSeqLen, comparisonSeq, comparisonSeqLen, scoreArr, tmpGapSize)==FAILED)
@@ -3810,6 +3832,9 @@ short updateContigOverlapInfoInScaf(contigOverlap *pContigOverlapInfo, int succe
 			pContigOverlapInfo->breakFlag = NO;
 		}else
 		{
+#if (DEBUG_FLAG==YES)
+		printf("line=%d, In %s(), broken.\n", __LINE__, __func__);
+#endif
 			pContigOverlapInfo->overlapLen = 0;
 			pContigOverlapInfo->mergeFlag = NO;
 			pContigOverlapInfo->gapSize = 0;

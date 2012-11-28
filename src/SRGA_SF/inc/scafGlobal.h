@@ -46,6 +46,7 @@ char averLinkNumFile[256];
 char scafGraphFile[256];
 char scafSeqFile[256];
 
+int averReadLen;
 int readLen;
 int entriesPerRead;
 uint64_t lastEntryMaskRead;
@@ -107,6 +108,7 @@ int64_t maxItemNumArrLocArr;
 ContigGraph *contigGraphArr;
 int64_t itemNumContigGraphArr;
 
+double maxLinksNumContigsThres;		// the maximal number of links between contigs , added 2012-11-24
 double minLinksNumContigsThres;		// the minimal number of links between contigs
 double maxRatioSecondFirstLinkNum;	// the maximal ratio of the second link number to the maximal link number between contigs
 double secondLinkNumFactor;			// the second link number factor

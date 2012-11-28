@@ -143,13 +143,14 @@ short initMemContigOverlap(const char *linkResultFile, const char *contigFile, c
 
 	// the auxiliary memory for overlapping
 	minLinksNumContigsThres = averLinkNum * MIN_FIRST_LINKNUM_FACTOR;
-	if(minLinksNumContigsThres>MAX_FIRST_LINKNUM_THRES)
-	{
-		minLinksNumContigsThres = MAX_FIRST_LINKNUM_THRES;
-	}else if(minLinksNumContigsThres<MIN_FIRST_LINKNUM_THRES)
+	if(minLinksNumContigsThres>MIN_FIRST_LINKNUM_THRES)
 	{
 		minLinksNumContigsThres = MIN_FIRST_LINKNUM_THRES;
 	}
+	//else if(minLinksNumContigsThres<MIN_FIRST_LINKNUM_THRES)
+	//{
+	//	minLinksNumContigsThres = MIN_FIRST_LINKNUM_THRES;
+	//}
 
 	maxOverlapSeqLen = 2 * readLen;
 	minOverlapThres = MIN_OVERLAP_THRESHOLD;
@@ -497,7 +498,7 @@ short generateContigOverlapInfo()
 			{
 				//####################### Debug information ###################
 #if DEBUG_FLAG
-				if(pContigOverlapInfo[j].contigID1==3 && pContigOverlapInfo[j].contigID2==61)
+				if(pContigOverlapInfo[j].contigID1==78 && pContigOverlapInfo[j].contigID2==81)
 				{
 					printf("contig1: [%d,%d,%d]; contig2: [%d,%d,%d]\n", pContigOverlapInfo[j].contigID1, pContigOverlapInfo[j].orientation1, contigInfoArr[pContigOverlapInfo[j].contigID1-1].contigLen, pContigOverlapInfo[j].contigID2, pContigOverlapInfo[j].orientation2, contigInfoArr[pContigOverlapInfo[j].contigID2-1].contigLen);
 				}
@@ -612,9 +613,15 @@ short updateContigOverlapLen(contigOverlap *pContigOverlapInfo, contigInfo *pCon
 		return FAILED;
 	}
 
+	//printf("line=%d, In %s(), gapSize=%d.\n", __LINE__, __func__, gapSize);
+
 	//if(validPairedNum_gapEstimate<=0)
 	if(validPairedNum_gapEstimate<minLinksNumContigsThres)
+	//if(validPairedNum_gapEstimate<minLinksNumContigsThres || (gapSize>0.6*meanSizeInsert && gapSize>2*averReadLen)) // 2012-11-19
 	{
+#if (DEBUG_FLAG==YES)
+		printf("line=%d, In %s(), broken.\n", __LINE__, __func__);
+#endif
 		pContigOverlapInfo->breakFlag = YES;
 		pContigOverlapInfo->gapSize = 0;
 		pContigOverlapInfo->mergeFlag = NO;
@@ -2295,7 +2302,10 @@ short updateOverlapLenByCutUncoveredContigEnds(contigOverlap *pContigOverlapInfo
 	if((uncoveredEndLenArray[0]==0 && uncoveredEndLenArray[1]==0) || (contigLen1-uncoveredEndLenArray[0]<=0 && contigLen2-uncoveredEndLenArray[1]<=0))
 	{ // No uncovered regions at contig ends, then break the contig links, and return
 		// break the links
-		pContigOverlapInfo->breakFlag = YES;
+#if (DEBUG_FLAG==YES)
+		printf("line=%d, In %s(), broken.\n", __LINE__, __func__);
+#endif
+		//pContigOverlapInfo->breakFlag = YES;
 		return SUCCESSFUL;
 	}
 
@@ -2756,6 +2766,9 @@ short updateOverlapLenByCutUncoveredContigEnds(contigOverlap *pContigOverlapInfo
 								//if((pContigInfoArr[contigID1-1].onlyEnd5==YES || pContigInfoArr[contigID2-1].onlyEnd5==YES) && validPairedNum_gapEstimate<breakLinkNumThres)
 								if((pContigInfoArr[contigID1-1].shortFlag==YES || pContigInfoArr[contigID2-1].shortFlag==YES) && validPairedNum_gapEstimate<breakLinkNumThres)
 								{
+#if (DEBUG_FLAG==YES)
+		printf("line=%d, In %s(), broken.\n", __LINE__, __func__);
+#endif
 									pContigOverlapInfo->breakFlag = YES;
 								}else
 								{

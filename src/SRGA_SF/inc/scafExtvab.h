@@ -45,6 +45,7 @@ extern char averLinkNumFile[256];
 extern char scafGraphFile[256];
 extern char scafSeqFile[256];
 
+extern int averReadLen;
 extern int readLen;
 extern int entriesPerRead;
 extern uint64_t lastEntryMaskRead;
@@ -106,6 +107,7 @@ extern int64_t maxItemNumArrLocArr;
 extern ContigGraph *contigGraphArr;
 extern int64_t itemNumContigGraphArr;
 
+extern double maxLinksNumContigsThres;		// the maximal number of links between contigs , added 2012-11-24
 extern double minLinksNumContigsThres;			// the minimal number of links between contigs, it is also used in scafContigMerge.c
 extern double maxRatioSecondFirstLinkNum;	// the maximal ratio of the second link number to the maximal link number between contigs
 extern double secondLinkNumFactor;			// the second link number factor

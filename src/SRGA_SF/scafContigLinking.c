@@ -868,7 +868,8 @@ short fillContigInfoArr(const char *contigFileName, contigInfo *pContigInfoArr)
 		else
 			pContigInfoArr[tmpContigNum].onlyEnd5 = NO;
 
-		if(contigLen<=1.5*contigEndLen)
+		//if(contigLen<=1.5*contigEndLen)
+		if(contigLen<=MAX_SHORT_LEN_THRES)		// added 2012-11-21
 			pContigInfoArr[tmpContigNum].shortFlag = YES;
 		else
 			pContigInfoArr[tmpContigNum].shortFlag = NO;
@@ -923,17 +924,19 @@ short initParaLinking(const char *averLinkNumFile)
 	fclose(fpAverLinkNum);
 	fpAverLinkNum = NULL;
 
+	maxLinksNumContigsThres = averLinkNum * MAX_FIRST_LINKNUM_FACTOR;
 	minLinksNumContigsThres = averLinkNum * MIN_FIRST_LINKNUM_FACTOR;
 	maxRatioSecondFirstLinkNum = SECOND_FIRST_SCORE_RATIO_LINKING;
 	secondLinkNumFactor = SECOND_LINKNUM_FACTOR;
 
-	if(minLinksNumContigsThres>MAX_FIRST_LINKNUM_THRES)
-	{
-		minLinksNumContigsThres = MAX_FIRST_LINKNUM_THRES;
-	}else if(minLinksNumContigsThres<MIN_FIRST_LINKNUM_THRES)
+	if(minLinksNumContigsThres>MIN_FIRST_LINKNUM_THRES)
 	{
 		minLinksNumContigsThres = MIN_FIRST_LINKNUM_THRES;
 	}
+	//else if(minLinksNumContigsThres<MIN_FIRST_LINKNUM_THRES)
+	//{
+	//	minLinksNumContigsThres = MIN_FIRST_LINKNUM_THRES;
+	//}
 
 	maxSecondLinkNumThres = minLinksNumContigsThres * secondLinkNumFactor;
 	if(maxSecondLinkNumThres > MAX_SECOND_LINKNUM_THRES)
@@ -941,9 +944,12 @@ short initParaLinking(const char *averLinkNumFile)
 		maxSecondLinkNumThres = MAX_SECOND_LINKNUM_THRES;
 	}
 
-	//printf("minLinksNumContigsThres=%.2f\n", minLinksNumContigsThres);
-	//printf("maxSecondLinkNumThres=%.2f\n", maxSecondLinkNumThres);
-	//printf("maxRatioSecondFirstLinkNum=%.2f\n", maxRatioSecondFirstLinkNum);
+#if (DEBUG_FLAG==YES)
+	printf("maxLinksNumContigsThres=%.2f\n", maxLinksNumContigsThres);
+	printf("minLinksNumContigsThres=%.2f\n", minLinksNumContigsThres);
+	printf("maxSecondLinkNumThres=%.2f\n", maxSecondLinkNumThres);
+	printf("maxRatioSecondFirstLinkNum=%.2f\n", maxRatioSecondFirstLinkNum);
+#endif
 
 	return SUCCESSFUL;
 }
@@ -970,8 +976,8 @@ short computeAverPairsEachContigEdge(double *averageLinkNum, ContigGraph *contig
 			{
 				for(k=0; k<pEdgeArray[j].totalSituationNum; k++)
 				{
-					if(pEdgeArray[j].validNums[ pEdgeArray[j].maxIndexes[k] ] >= minLinksNumContigsThreshold)
-					//if(pEdgeArray[j].validNums[ pEdgeArray[j].maxIndexes[k] ] >= 1)
+					//if(pEdgeArray[j].validNums[ pEdgeArray[j].maxIndexes[k] ] >= minLinksNumContigsThreshold)
+					if(pEdgeArray[j].validNums[ pEdgeArray[j].maxIndexes[k] ] >= 1)
 					{
 						totalPairs += pEdgeArray[j].validNums[ pEdgeArray[j].maxIndexes[k] ];
 					}
@@ -987,7 +993,9 @@ short computeAverPairsEachContigEdge(double *averageLinkNum, ContigGraph *contig
 
 	*averageLinkNum = (double)totalPairs / totalEdges;
 
-	//printf("totalPairs=%ld, totalEdges=%ld, averageLinkNum=%.2f\n", totalPairs, totalEdges, *averageLinkNum);
+#if (DEBUG_FLAG==YES)
+	printf("totalPairs=%ld, totalEdges=%ld, averageLinkNum=%.2f\n", totalPairs, totalEdges, *averageLinkNum);
+#endif
 
 	return SUCCESSFUL;
 }
@@ -1027,7 +1035,7 @@ short linkContigs(const char *linkResultFile)
 		//############################ Debug information ######################
 #if DEBUG_FLAG
 		printf("============ Begin linking scaffolds: %d ============\n", linkID);
-		if(linkID==2)
+		if(linkID==6)
 		{
 			printf("$$$$$$$$$$$$$$$$$$$$$ linkID=%d!\n", linkID);
 		}
@@ -1089,7 +1097,11 @@ short linkContigs(const char *linkResultFile)
 
 				//if(maxRowColNode->maxValue<minLinksNumContigsThres || (maxRowColNode->secondMaxValue>0 && ((double)maxRowColNode->secondMaxValue/maxRowColNode->maxValue>maxRatioSecondFirstLinkNum || maxRowColNode->secondMaxValue>minLinksNumContigsThres*secondLinkNumFactor)))
 				//if(maxRowColNode->maxValue<minLinksNumContigsThres || (maxRowColNode->secondMaxValue>0 && ((double)maxRowColNode->secondMaxValue/maxRowColNode->maxValue>maxRatioSecondFirstLinkNum || maxRowColNode->secondMaxValue>maxSecondLinkNumThres)))
-				if(maxRowColNode->maxValue<minLinksNumContigsThres || (maxRowColNode->secondMaxValue>0 && ((double)maxRowColNode->secondMaxValue/maxRowColNode->maxValue>maxRatioSecondFirstLinkNum || (maxRowColNode->secondMaxValue>maxSecondLinkNumThres && (double)maxRowColNode->secondMaxValue/maxRowColNode->maxValue>0.3))))
+				//if(maxRowColNode->maxValue<minLinksNumContigsThres || (maxRowColNode->secondMaxValue>0 && ((double)maxRowColNode->secondMaxValue/maxRowColNode->maxValue>maxRatioSecondFirstLinkNum || (maxRowColNode->secondMaxValue>maxSecondLinkNumThres && (double)maxRowColNode->secondMaxValue/maxRowColNode->maxValue>0.3))))
+				//if(maxRowColNode->maxValue<minLinksNumContigsThres || (maxRowColNode->secondMaxValue>0 && ((double)maxRowColNode->secondMaxValue/maxRowColNode->maxValue>maxRatioSecondFirstLinkNum || ((maxRowColNode->secondMaxValue>maxSecondLinkNumThres && (double)maxRowColNode->secondMaxValue/maxRowColNode->maxValue>0.3) || maxRowColNode->secondMaxValue>0.5*averLinkNum))))  // added 2012-11-19
+				//if(maxRowColNode->maxValue<minLinksNumContigsThres || (maxRowColNode->secondMaxValue>0 && ((double)maxRowColNode->secondMaxValue/maxRowColNode->maxValue>maxRatioSecondFirstLinkNum || ((maxRowColNode->secondMaxValue>maxSecondLinkNumThres && (double)maxRowColNode->secondMaxValue/maxRowColNode->maxValue>0.3) || (maxRowColNode->secondMaxValue>0.5*averLinkNum || maxRowColNode->secondMaxValue>maxSecondLinkNumThres)))))  // added 2012-11-22
+				//if(maxRowColNode->maxValue==0 || (maxRowColNode->maxValue<minLinksNumContigsThres && maxRowColNode->secondMaxValue>0) || (maxRowColNode->secondMaxValue>0 && ((double)maxRowColNode->secondMaxValue/maxRowColNode->maxValue>maxRatioSecondFirstLinkNum || ((maxRowColNode->secondMaxValue>maxSecondLinkNumThres && (double)maxRowColNode->secondMaxValue/maxRowColNode->maxValue>0.3) || (maxRowColNode->secondMaxValue>0.5*averLinkNum || maxRowColNode->secondMaxValue>maxSecondLinkNumThres)))))  // added 2012-11-22, deleted 2012-11-24
+				if(maxRowColNode->maxValue==0 || maxRowColNode->maxValue>maxLinksNumContigsThres || (maxRowColNode->maxValue<minLinksNumContigsThres && maxRowColNode->secondMaxValue>0) || (maxRowColNode->secondMaxValue>0 && ((double)maxRowColNode->secondMaxValue/maxRowColNode->maxValue>maxRatioSecondFirstLinkNum || ((maxRowColNode->secondMaxValue>maxSecondLinkNumThres && (double)maxRowColNode->secondMaxValue/maxRowColNode->maxValue>0.3) || (maxRowColNode->secondMaxValue>0.5*averLinkNum || maxRowColNode->secondMaxValue>maxSecondLinkNumThres)))))  // added 2012-11-24
 				{
 					if(changeMaxRowCol(maxRowColNode, contigLinkArr, headRowContigLinkArr, contigInfoArr, linkRound, YES)==FAILED)
 					{
@@ -1226,7 +1238,11 @@ short linkContigs(const char *linkResultFile)
 
 				//if(maxRowColNode->maxValue<minLinksNumContigsThres || (maxRowColNode->secondMaxValue>0 && ((double)maxRowColNode->secondMaxValue/maxRowColNode->maxValue>maxRatioSecondFirstLinkNum || maxRowColNode->secondMaxValue>minLinksNumContigsThres*secondLinkNumFactor)))
 				//if(maxRowColNode->maxValue<minLinksNumContigsThres || (maxRowColNode->secondMaxValue>0 && ((double)maxRowColNode->secondMaxValue/maxRowColNode->maxValue>maxRatioSecondFirstLinkNum || maxRowColNode->secondMaxValue>maxSecondLinkNumThres)))
-				if(maxRowColNode->maxValue<minLinksNumContigsThres || (maxRowColNode->secondMaxValue>0 && ((double)maxRowColNode->secondMaxValue/maxRowColNode->maxValue>maxRatioSecondFirstLinkNum || (maxRowColNode->secondMaxValue>maxSecondLinkNumThres && (double)maxRowColNode->secondMaxValue/maxRowColNode->maxValue>0.3))))
+				//if(maxRowColNode->maxValue<minLinksNumContigsThres || (maxRowColNode->secondMaxValue>0 && ((double)maxRowColNode->secondMaxValue/maxRowColNode->maxValue>maxRatioSecondFirstLinkNum || (maxRowColNode->secondMaxValue>maxSecondLinkNumThres && (double)maxRowColNode->secondMaxValue/maxRowColNode->maxValue>0.3))))
+				//if(maxRowColNode->maxValue<minLinksNumContigsThres || (maxRowColNode->secondMaxValue>0 && ((double)maxRowColNode->secondMaxValue/maxRowColNode->maxValue>maxRatioSecondFirstLinkNum || ((maxRowColNode->secondMaxValue>maxSecondLinkNumThres && (double)maxRowColNode->secondMaxValue/maxRowColNode->maxValue>0.3) || maxRowColNode->secondMaxValue>0.5*averLinkNum)))) // added 2012-11-19
+				//if(maxRowColNode->maxValue<minLinksNumContigsThres || (maxRowColNode->secondMaxValue>0 && ((double)maxRowColNode->secondMaxValue/maxRowColNode->maxValue>maxRatioSecondFirstLinkNum || ((maxRowColNode->secondMaxValue>maxSecondLinkNumThres && (double)maxRowColNode->secondMaxValue/maxRowColNode->maxValue>0.3) || (maxRowColNode->secondMaxValue>0.5*averLinkNum || maxRowColNode->secondMaxValue>maxSecondLinkNumThres))))) // added 2012-11-22
+				//if(maxRowColNode->maxValue==0 || (maxRowColNode->maxValue<minLinksNumContigsThres && maxRowColNode->secondMaxValue>0) || (maxRowColNode->secondMaxValue>0 && ((double)maxRowColNode->secondMaxValue/maxRowColNode->maxValue>maxRatioSecondFirstLinkNum || ((maxRowColNode->secondMaxValue>maxSecondLinkNumThres && (double)maxRowColNode->secondMaxValue/maxRowColNode->maxValue>0.3) || (maxRowColNode->secondMaxValue>0.5*averLinkNum || maxRowColNode->secondMaxValue>maxSecondLinkNumThres))))) // added 2012-11-22, deleted 2012-11-24
+				if(maxRowColNode->maxValue==0 || maxRowColNode->maxValue>maxLinksNumContigsThres || (maxRowColNode->maxValue<minLinksNumContigsThres && maxRowColNode->secondMaxValue>0) || (maxRowColNode->secondMaxValue>0 && ((double)maxRowColNode->secondMaxValue/maxRowColNode->maxValue>maxRatioSecondFirstLinkNum || ((maxRowColNode->secondMaxValue>maxSecondLinkNumThres && (double)maxRowColNode->secondMaxValue/maxRowColNode->maxValue>0.3) || (maxRowColNode->secondMaxValue>0.5*averLinkNum || maxRowColNode->secondMaxValue>maxSecondLinkNumThres))))) // added 2012-11-24
 				{
 					linkRound ++;
 					break;
@@ -1371,7 +1387,7 @@ short getMaxColsOfSingleRow(ContigGraph *pContigGraphArray, maxRowCol *pMaxRowCo
 #if DEBUG_FLAG
 				if(pEdgeArray[i].validNums[ pEdgeArray[i].maxIndexes[j] ] > 0)
 				{
-					printf("line=%d, In %s(), row=%d, col=%d, value=%d, situationID=%d\n", __LINE__, __func__, pMaxRowColNode->maxRow, pEdgeArray[i].col, pEdgeArray[i].validNums[ pEdgeArray[i].maxIndexes[j] ], pEdgeArray[i].maxIndexes[j]);
+					printf("line=%d, In %s(), contigs(%d, %d), row=%d, col=%d, value=%d, situationID=%d\n", __LINE__, __func__, pMaxRowColNode->maxRow/2+1, pEdgeArray[i].col/2+1, pMaxRowColNode->maxRow, pEdgeArray[i].col, pEdgeArray[i].validNums[ pEdgeArray[i].maxIndexes[j] ], pEdgeArray[i].maxIndexes[j]);
 				}
 #endif
 				// #################### Debug information #####################
@@ -1454,7 +1470,7 @@ short getMaxRowsOfSingleCol(ContigGraph *pContigGraphArray, maxRowCol *pMaxRowCo
 #if DEBUG_FLAG
 				if(pEdgeArray[i].validNums[ pEdgeArray[i].maxIndexes[j] ] > 0)
 				{
-					printf("line=%d, In %s(), row=%d, col=%d, value=%d, situationID=%d\n", __LINE__, __func__, pEdgeArray[i].col, pMaxRowColNode->maxCol, pEdgeArray[i].validNums[ pEdgeArray[i].maxIndexes[j] ], newSituationID);
+					printf("line=%d, In %s(), contigs(%d, %d), row=%d, col=%d, value=%d, situationID=%d\n", __LINE__, __func__, pEdgeArray[i].col/2+1, pMaxRowColNode->maxCol/2+1, pEdgeArray[i].col, pMaxRowColNode->maxCol, pEdgeArray[i].validNums[ pEdgeArray[i].maxIndexes[j] ], newSituationID);
 				}
 #endif
 				// #################### Debug information #####################
@@ -1630,8 +1646,9 @@ short getFirstLinkedContigs(int *firstContigID, maxRowCol *pMaxRowColNode, conti
 				//if(maxValue>=minLinksNumContigsThres || (secondMaxValue>0 && (secondMaxValue/maxValue<maxRatioSecondFirstLinkNum || secondMaxValue<minLinksNumContigsThres*secondLinkNumFactor)))
 				//if(maxValue>=minLinksNumContigsThres && (secondMaxValue/maxValue<maxRatioSecondFirstLinkNum && secondMaxValue<minLinksNumContigsThres*secondLinkNumFactor))
 				//if(pMaxRowColNode->maxValue>=minLinksNumContigsThres && ((double)pMaxRowColNode->secondMaxValue/pMaxRowColNode->maxValue<maxRatioSecondFirstLinkNum && pMaxRowColNode->secondMaxValue<minLinksNumContigsThres*secondLinkNumFactor))
-				if(pMaxRowColNode->maxValue>=minLinksNumContigsThres && ((double)pMaxRowColNode->secondMaxValue/pMaxRowColNode->maxValue<maxRatioSecondFirstLinkNum && pMaxRowColNode->secondMaxValue<maxSecondLinkNumThres))
-				//if(pMaxRowColNode->maxValue>=minLinksNumContigsThres && ((double)pMaxRowColNode->secondMaxValue/pMaxRowColNode->maxValue<maxRatioSecondFirstLinkNum && pMaxRowColNode->secondMaxValue==0))
+				//if(pMaxRowColNode->maxValue>=minLinksNumContigsThres && ((double)pMaxRowColNode->secondMaxValue/pMaxRowColNode->maxValue<maxRatioSecondFirstLinkNum && pMaxRowColNode->secondMaxValue<maxSecondLinkNumThres))
+				//if(pMaxRowColNode->maxValue>=minLinksNumContigsThres && ((double)pMaxRowColNode->secondMaxValue/pMaxRowColNode->maxValue<maxRatioSecondFirstLinkNum && pMaxRowColNode->secondMaxValue==0))  // deleted 2012-11-24
+				if(pMaxRowColNode->maxValue>=minLinksNumContigsThres && pMaxRowColNode->maxValue<=maxLinksNumContigsThres && ((double)pMaxRowColNode->secondMaxValue/pMaxRowColNode->maxValue<maxRatioSecondFirstLinkNum && pMaxRowColNode->secondMaxValue==0))  // added 2012-11-24
 				{
 					//if(contigInfoArray[pMaxRowColNode->contigID2-1].onlyEnd5==NO)
 					if(contigInfoArray[pMaxRowColNode->contigID2-1].shortFlag==NO)
@@ -1686,6 +1703,9 @@ short isLinkSingleton(maxRowCol *pMaxRowColNode, ContigGraph *pContigGraphArray,
 	int64_t j, maxRow, maxCol;
 	ContigGraph *pContigGraphNode;
 	ContigEdge *pEdgeArray;
+	int singletonFlag;
+
+	singletonFlag = YES;
 
 	if(linkRound==1)
 	{ // the first link round
@@ -1693,21 +1713,27 @@ short isLinkSingleton(maxRowCol *pMaxRowColNode, ContigGraph *pContigGraphArray,
 		pContigGraphNode = pContigGraphArray + maxCol;
 		if(pContigGraphNode->arraySize==1)
 		{
-			return YES;
+			singletonFlag = YES;
 		}else if(pContigGraphNode->arraySize>1)
 		{
 			maxRow = pMaxRowColNode->maxRow;
 			pEdgeArray = pContigGraphNode->pEdgeArray;
 			for(j=0; j<pContigGraphNode->arraySize; j++)
 			{
+
+#if (DEBUG_FLAG==YES)
+				//printf("num=%d\n", pEdgeArray[j].validNums[pEdgeArray[j].maxIndexes[0]]);
+				printf("line=%d, In %s(), contigs(%d, %d), row=%d, col=%d, value=%d, situationID=%d\n", __LINE__, __func__, pMaxRowColNode->maxCol/2+1, pEdgeArray[j].col/2+1, pMaxRowColNode->maxCol, pEdgeArray[j].col, pEdgeArray[j].validNums[ pEdgeArray[j].maxIndexes[0] ], pEdgeArray[j].maxIndexes[0]);
+#endif
+
 				//if(pEdgeArray[j].col != maxRow && pEdgeArray[j].validNums[pEdgeArray[j].maxIndexes[0]] >= minLinksNumContigsThres*secondLinkNumFactor)
 				//if(pEdgeArray[j].col != maxRow && pEdgeArray[j].validNums[pEdgeArray[j].maxIndexes[0]] >= maxSecondLinkNumThres)
-				if(pEdgeArray[j].col != maxRow && pEdgeArray[j].validNums[pEdgeArray[j].maxIndexes[0]] >= minLinksNumContigsThres)
+				//if(pEdgeArray[j].col != maxRow && pEdgeArray[j].validNums[pEdgeArray[j].maxIndexes[0]] >= minLinksNumContigsThres)
+				if(singletonFlag==YES && pEdgeArray[j].col != maxRow && pEdgeArray[j].validNums[pEdgeArray[j].maxIndexes[0]] > 0)  // added 2012-11-21
 				{
-					return NO;
+					singletonFlag = NO;
 				}
 			}
-			return YES;
 		}else
 		{
 			printf("line=%d, In %s(), linkRound=%d, pContigGraphArray[%ld].arraySize=%d, error!\n", __LINE__, __func__, linkRound, maxCol, pContigGraphNode->arraySize);
@@ -1719,27 +1745,35 @@ short isLinkSingleton(maxRowCol *pMaxRowColNode, ContigGraph *pContigGraphArray,
 		pContigGraphNode = pContigGraphArray + maxRow;
 		if(pContigGraphNode->arraySize==1)
 		{
-			return YES;
+			singletonFlag = YES;
 		}else if(pContigGraphNode->arraySize>1)
 		{
 			maxCol = pMaxRowColNode->maxCol;
 			pEdgeArray = pContigGraphNode->pEdgeArray;
 			for(j=0; j<pContigGraphNode->arraySize; j++)
 			{
+
+#if (DEBUG_FLAG==YES)
+				//printf("num=%d\n", pEdgeArray[j].validNums[pEdgeArray[j].maxIndexes[0]]);
+				printf("line=%d, In %s(), contigs(%d, %d), row=%d, col=%d, value=%d, situationID=%d\n", __LINE__, __func__, pMaxRowColNode->maxRow/2+1, pEdgeArray[j].col/2+1, pMaxRowColNode->maxRow, pEdgeArray[j].col, pEdgeArray[j].validNums[ pEdgeArray[j].maxIndexes[0] ], pEdgeArray[j].maxIndexes[0]);
+#endif
+
 				//if(pEdgeArray[j].col != maxCol && pEdgeArray[j].validNums[pEdgeArray[j].maxIndexes[0]] >= minLinksNumContigsThres*secondLinkNumFactor)
 				//if(pEdgeArray[j].col != maxCol && pEdgeArray[j].validNums[pEdgeArray[j].maxIndexes[0]] >= maxSecondLinkNumThres)
-				if(pEdgeArray[j].col != maxCol && pEdgeArray[j].validNums[pEdgeArray[j].maxIndexes[0]] >= minLinksNumContigsThres)
+				//if(pEdgeArray[j].col != maxCol && pEdgeArray[j].validNums[pEdgeArray[j].maxIndexes[0]] >= minLinksNumContigsThres)
+				if(singletonFlag==YES && pEdgeArray[j].col != maxCol && pEdgeArray[j].validNums[pEdgeArray[j].maxIndexes[0]] > 0)  // added 2012-11-21
 				{
-					return NO;
+					singletonFlag = NO;
 				}
 			}
-			return YES;
 		}else
 		{
 			printf("line=%d, In %s(), linkRound=%d, pContigGraphArray[%ld].arraySize=%d, error!\n", __LINE__, __func__, linkRound, maxRow, pContigGraphNode->arraySize);
 			return ERROR;
 		}
 	}
+
+	return singletonFlag;
 }
 
 /**

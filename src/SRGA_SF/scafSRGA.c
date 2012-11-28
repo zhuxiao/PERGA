@@ -309,7 +309,7 @@ short setGlobalParas(const char *outputPathName, const char *outputPrefixName, c
 	}
 
 	// get the readLen from fastq file
-	if(getReadLenFromFilesInScaf(&readLen, readFilesInput, readFileNum, readsFileFormatType)==FAILED)
+	if(getReadLenFromFilesInScaf(&readLen, &averReadLen, readFilesInput, readFileNum, readsFileFormatType)==FAILED)
 	{
 		printf("line=%d, In %s(), cannot get readLen, error!\n", __LINE__, __func__);
 		return FAILED;
@@ -358,7 +358,7 @@ short setGlobalParas(const char *outputPathName, const char *outputPrefixName, c
 
 
 	// output the variables
-	printf("contigs file       : %s\n", contigsFile);
+	printf("\ncontigs file       : %s\n", contigsFile);
 	printf("align region size  : %d\n", contigEndLen);
 	printf("min contig size    : %d\n", minContigLenThres);
 	printf("paired mode        : %d\n", pairedMode);
@@ -370,9 +370,9 @@ short setGlobalParas(const char *outputPathName, const char *outputPrefixName, c
 		printf("insert size sdev.  : %.2f\n", stardardDeviationInsert);
 	}
 	if(gapFillFlag==YES)
-		printf("gap fill flag      : yes\n");
+		printf("gap filling flag   : yes\n");
 	else
-		printf("gap fill flag      : no\n");
+		printf("gap filling flag   : no\n");
 	printf("output directory   : %s\n\n", outputPathStr);
 	//printf("output file prefix : %s\n\n", outputPrefixPara);
 
@@ -589,18 +589,18 @@ short getReadsFileFormatInScaf(int *readsFileFormatType, char **readFilesInput, 
  *  @return:
  *  	If succeeds, return SUCCESSFUL; otherwise, return FAILED.
  */
-short getReadLenFromFilesInScaf(int *readLen, char **readFilesInput, int readFileNum, int readsFileFormatType)
+short getReadLenFromFilesInScaf(int *readLen, int *averReadLen, char **readFilesInput, int readFileNum, int readsFileFormatType)
 {
 	if(readsFileFormatType==FILE_FORMAT_FASTA)
 	{
-		if(getMinReadLenFromFastaFilesInScaf(readLen, readFilesInput, readFileNum)==FAILED)
+		if(getMinReadLenFromFastaFilesInScaf(readLen, averReadLen, readFilesInput, readFileNum)==FAILED)
 		{
 			printf("line=%d, In %s(), cannot get readlenInFile, error!\n", __LINE__, __func__);
 			return FAILED;
 		}
 	}else if(readsFileFormatType==FILE_FORMAT_FASTQ)
 	{
-		if(getMinReadLenFromFastqFilesInScaf(readLen, readFilesInput, readFileNum)==FAILED)
+		if(getMinReadLenFromFastqFilesInScaf(readLen, averReadLen, readFilesInput, readFileNum)==FAILED)
 		{
 			printf("line=%d, In %s(), cannot get readlenInFile, error!\n", __LINE__, __func__);
 			return FAILED;
@@ -615,10 +615,12 @@ short getReadLenFromFilesInScaf(int *readLen, char **readFilesInput, int readFil
  *  @return:
  *  	If succeeds, return SUCCESSFUL; otherwise, return FAILED.
  */
-short getMinReadLenFromFastaFilesInScaf(int *readLenInFile, char **readFilesInput, int readFileNum)
+short getMinReadLenFromFastaFilesInScaf(int *readLenInFile, int *averReadLen, char **readFilesInput, int readFileNum)
 {
-	int i, tmpReadLen;
+	int i, tmpReadLen, sumReadLenTmp, sumNumTmp;
 
+	sumReadLenTmp = 0;
+	sumNumTmp = 0;
 	*readLenInFile = INT_MAX;
 	for(i=0; i<readFileNum; i++)
 	{
@@ -628,9 +630,29 @@ short getMinReadLenFromFastaFilesInScaf(int *readLenInFile, char **readFilesInpu
 			return FAILED;
 		}
 
+#if (DEBUG_FLAG==YES)
+		printf("tmpReadLen=%d\n", tmpReadLen);
+#endif
+
 		if(tmpReadLen<*readLenInFile)
 			*readLenInFile = tmpReadLen;
+
+		if(tmpReadLen>0)
+		{
+			sumReadLenTmp += tmpReadLen;
+			sumNumTmp ++;
+		}
 	}
+
+	if(sumNumTmp>0)
+		*averReadLen = (double)sumReadLenTmp / sumNumTmp;
+	else
+		*averReadLen = 0;
+
+#if (DEBUG_FLAG==YES)
+		printf("readLen=%d\n", *readLenInFile);
+		printf("averReadLen=%d\n", *averReadLen);
+#endif
 
 	return SUCCESSFUL;
 }
@@ -640,10 +662,12 @@ short getMinReadLenFromFastaFilesInScaf(int *readLenInFile, char **readFilesInpu
  *  @return:
  *  	If succeeds, return SUCCESSFUL; otherwise, return FAILED.
  */
-short getMinReadLenFromFastqFilesInScaf(int *readLenInFile, char **readFilesInput, int readFileNum)
+short getMinReadLenFromFastqFilesInScaf(int *readLenInFile, int *averReadLen, char **readFilesInput, int readFileNum)
 {
-	int i, tmpReadLen;
+	int i, tmpReadLen, sumReadLenTmp, sumNumTmp;
 
+	sumReadLenTmp = 0;
+	sumNumTmp = 0;
 	*readLenInFile = INT_MAX;
 	for(i=0; i<readFileNum; i++)
 	{
@@ -653,9 +677,29 @@ short getMinReadLenFromFastqFilesInScaf(int *readLenInFile, char **readFilesInpu
 			return FAILED;
 		}
 
+#if (DEBUG_FLAG==YES)
+		printf("tmpReadLen=%d\n", tmpReadLen);
+#endif
+
 		if(tmpReadLen<*readLenInFile)
 			*readLenInFile = tmpReadLen;
+
+		if(tmpReadLen>0)
+		{
+			sumReadLenTmp += tmpReadLen;
+			sumNumTmp ++;
+		}
 	}
+
+	if(sumNumTmp>0)
+		*averReadLen = (double)sumReadLenTmp / sumNumTmp;
+	else
+		*averReadLen = 0;
+
+#if (DEBUG_FLAG==YES)
+		printf("readLen=%d\n", *readLenInFile);
+		printf("averReadLen=%d\n", *averReadLen);
+#endif
 
 	return SUCCESSFUL;
 }
@@ -669,7 +713,7 @@ short getReadLenFromFastaInScaf(int *tmpReadLen, const char *fastaFile)
 {
 	FILE *fpFasta;
 	char ch, seq_data[5000];
-	int i, tmpReadsNum, tmpLen, validFlag;
+	int64_t tmpReadsNum, tmpLen, sumLen;
 
 	fpFasta = fopen(fastaFile, "r");
 	if(fpFasta==NULL)
@@ -678,44 +722,38 @@ short getReadLenFromFastaInScaf(int *tmpReadLen, const char *fastaFile)
 		return FAILED;
 	}
 
-	tmpLen = 0;
-	validFlag = YES;
 	tmpReadsNum = 0;
+	sumLen = 0;
 	while(!feof(fpFasta))
 	{
-		i = 0;
 		ch = fgetc(fpFasta);
 		while(ch!='\n') ch = fgetc(fpFasta);
 
+		tmpLen = 0;
 		while(ch!='>' && ch!=-1)
 		{
 			if(ch!='\n')
 			{
-				seq_data[i++] = ch;
+				seq_data[tmpLen++] = ch;
 			}
 			ch = fgetc(fpFasta);
 		}
-		seq_data[i] = '\0';
+		seq_data[tmpLen] = '\0';
 
 		if(ch=='>')  //a read is read finished
 		{
-			if(tmpReadsNum==0)
-				tmpLen = strlen(seq_data);
-			else if(tmpLen!=strlen(seq_data))
-			{
-				validFlag = NO;
-				break;
-			}
+			sumLen += tmpLen;
 
 			tmpReadsNum ++;
-			if(tmpReadsNum>=100)
+			if(tmpReadsNum>=MAX_READ_NUM_READ_LEN_SAMPLE)
 				break;
 		}
 	}
 
-	if(validFlag==YES)
-		*tmpReadLen = tmpLen;
-	else
+	if(tmpReadsNum>0)
+	{
+		*tmpReadLen = sumLen / tmpReadsNum;
+	}else
 	{
 		*tmpReadLen = 0;
 
@@ -741,7 +779,7 @@ short getReadLenFromFastqInScaf(int *tmpReadLen, const char *fastqFile)
 {
 	FILE *fpFastq;
 	char ch, seq_data[5000];
-	int i, line_index, tmpReadsNum, tmpLen, validFlag;
+	int64_t i, line_index, tmpReadsNum, tmpLen, sumLen, validFlag;
 
 	fpFastq = fopen(fastqFile, "r");
 	if(fpFastq==NULL)
@@ -750,8 +788,7 @@ short getReadLenFromFastqInScaf(int *tmpReadLen, const char *fastqFile)
 		return FAILED;
 	}
 
-	tmpLen = 0;
-	validFlag = YES;
+	sumLen = 0;
 	tmpReadsNum = 0;
 	line_index = 0;
 	while(!feof(fpFastq))
@@ -765,14 +802,14 @@ short getReadLenFromFastqInScaf(int *tmpReadLen, const char *fastqFile)
 			}
 		}else if(line_index==1)  //the sequence line
 		{
-			i = 0;
+			tmpLen = 0;
 			ch = fgetc(fpFastq);
 			while(ch!='\n')
 			{
-				seq_data[i++] = ch;
+				seq_data[tmpLen++] = ch;
 				ch = fgetc(fpFastq);
 			}
-			seq_data[i] = '\0';
+			seq_data[tmpLen] = '\0';
 		}else if(line_index==2)  //the sequence name line
 		{
 			ch = fgetc(fpFastq);
@@ -782,38 +819,27 @@ short getReadLenFromFastqInScaf(int *tmpReadLen, const char *fastqFile)
 			}
 		}else
 		{
-			//i = 0;
 			ch = fgetc(fpFastq);
-			while(ch!='\n'  && ch!=-1)
-			{
-				//qual_data[i++] = ch;
-				ch = fgetc(fpFastq);
-			}
-			//qual_data[i] = '\0';
+			while(ch!='\n'  && ch!=-1) ch = fgetc(fpFastq);
 		}
 		line_index++;
 
 		if(line_index==4)  //a read is read finished
 		{
-			if(tmpReadsNum==0)
-				tmpLen = strlen(seq_data);
-			else if(tmpLen!=strlen(seq_data))
-			{
-				validFlag = NO;
-				break;
-			}
+			sumLen += tmpLen;
 
 			tmpReadsNum ++;
-			if(tmpReadsNum>=100)
+			if(tmpReadsNum>=MAX_READ_NUM_READ_LEN_SAMPLE)
 				break;
 
 			line_index = 0;
 		}
 	}
 
-	if(validFlag==YES)
-		*tmpReadLen = tmpLen;
-	else
+	if(tmpReadsNum>0)
+	{
+		*tmpReadLen = sumLen / tmpReadsNum;
+	}else
 	{
 		*tmpReadLen = 0;
 

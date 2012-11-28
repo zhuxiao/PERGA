@@ -97,7 +97,7 @@ short mapPEFastaSeparate(const char *readSeqFile, const char *readMatchFile1, co
 	int matchFlag[2];
 	uint64_t i, j, fileID, readID;		// readID starts from 1
 
-	char **readBuf1, **readBuf2;
+	readBuf_t *pReadBuf1, *pReadBuf2;
 	uint64_t readsNum1, readsNum2;
 
 	short errorFlag[2];
@@ -134,12 +134,12 @@ short mapPEFastaSeparate(const char *readSeqFile, const char *readMatchFile1, co
 	}
 
 	// initialize the memory of read buffers
-	if(initMemReadsBuf(&readBuf1)==FAILED)
+	if(initMemReadsBuf(&pReadBuf1)==FAILED)
 	{
 		printf("line=%d, In %s(), cannot initialize the read buffer, error!\n", __LINE__, __func__);
 		return FAILED;
 	}
-	if(initMemReadsBuf(&readBuf2)==FAILED)
+	if(initMemReadsBuf(&pReadBuf2)==FAILED)
 	{
 		printf("line=%d, In %s(), cannot initialize the read buffer, error!\n", __LINE__, __func__);
 		return FAILED;
@@ -196,12 +196,12 @@ short mapPEFastaSeparate(const char *readSeqFile, const char *readMatchFile1, co
 			}
 
 			// fille the reads to reads buffers
-			if(fillReadsToBufFasta(fpPE[0], readBuf1, &readsNum1)==FAILED)
+			if(fillReadsToBufFasta(fpPE[0], pReadBuf1, &readsNum1, readLen)==FAILED)
 			{
 				printf("line=%d, In %s(), cannot fill the read buffer, error!\n", __LINE__, __func__);
 				return FAILED;
 			}
-			if(fillReadsToBufFasta(fpPE[1], readBuf2, &readsNum2)==FAILED)
+			if(fillReadsToBufFasta(fpPE[1], pReadBuf2, &readsNum2, readLen)==FAILED)
 			{
 				printf("line=%d, In %s(), cannot fill the read buffer, error!\n", __LINE__, __func__);
 				return FAILED;
@@ -216,8 +216,8 @@ short mapPEFastaSeparate(const char *readSeqFile, const char *readMatchFile1, co
 			// map the reads in reads buffers
 			for(i=0; i<readsNum1; i++)
 			{
-				readSeq[0] = readBuf1[i];
-				readSeq[1] = readBuf2[i];
+				readSeq[0] = pReadBuf1[i].seq;
+				readSeq[1] = pReadBuf2[i].seq;
 
 				// ####################### Debug information #######################
 				//if(readID==6947)
@@ -229,11 +229,11 @@ short mapPEFastaSeparate(const char *readSeqFile, const char *readMatchFile1, co
 				errorFlag[0] = errorFlag[1] = NO;
 
 				// check unknown bases
-				if(containUnknownBase(readSeq[0])==YES)
+				if(pReadBuf1[i].len<readLen || containUnknownBase(readSeq[0])==YES)
 				{
 					errorFlag[0] = YES;
 				}
-				if(containUnknownBase(readSeq[1])==YES)
+				if(pReadBuf2[i].len<readLen || containUnknownBase(readSeq[1])==YES)
 				{
 					errorFlag[1] = YES;
 				}
@@ -317,8 +317,8 @@ short mapPEFastaSeparate(const char *readSeqFile, const char *readMatchFile1, co
 	}
 
 	// free memory of read buffers
-	freeMemReadsBuf(&readBuf1);
-	freeMemReadsBuf(&readBuf2);
+	freeMemReadsBuf(&pReadBuf1);
+	freeMemReadsBuf(&pReadBuf2);
 
 	for(i=0; i<MAX_READ_BUF_SIZE; i++)
 	{
@@ -361,7 +361,7 @@ short mapPEFastqSeparate(const char *readSeqFile, const char *readMatchFile1, co
 	int matchFlag[2];
 	uint64_t i, j, fileID, readID;		// readID starts from 1
 
-	char **readBuf1, **readBuf2;
+	readBuf_t *pReadBuf1, *pReadBuf2;
 	uint64_t readsNum1, readsNum2;
 
 	short errorFlag[2];
@@ -398,12 +398,12 @@ short mapPEFastqSeparate(const char *readSeqFile, const char *readMatchFile1, co
 	}
 
 	// initialize the memory of read buffers
-	if(initMemReadsBuf(&readBuf1)==FAILED)
+	if(initMemReadsBuf(&pReadBuf1)==FAILED)
 	{
 		printf("line=%d, In %s(), cannot initialize the read buffer, error!\n", __LINE__, __func__);
 		return FAILED;
 	}
-	if(initMemReadsBuf(&readBuf2)==FAILED)
+	if(initMemReadsBuf(&pReadBuf2)==FAILED)
 	{
 		printf("line=%d, In %s(), cannot initialize the read buffer, error!\n", __LINE__, __func__);
 		return FAILED;
@@ -460,12 +460,12 @@ short mapPEFastqSeparate(const char *readSeqFile, const char *readMatchFile1, co
 			}
 
 			// fille the reads to reads buffers
-			if(fillReadsToBuf(fpPE[0], readBuf1, &readsNum1)==FAILED)
+			if(fillReadsToBufFastq(fpPE[0], pReadBuf1, &readsNum1, readLen)==FAILED)
 			{
 				printf("line=%d, In %s(), cannot fill the read buffer, error!\n", __LINE__, __func__);
 				return FAILED;
 			}
-			if(fillReadsToBuf(fpPE[1], readBuf2, &readsNum2)==FAILED)
+			if(fillReadsToBufFastq(fpPE[1], pReadBuf2, &readsNum2, readLen)==FAILED)
 			{
 				printf("line=%d, In %s(), cannot fill the read buffer, error!\n", __LINE__, __func__);
 				return FAILED;
@@ -480,8 +480,8 @@ short mapPEFastqSeparate(const char *readSeqFile, const char *readMatchFile1, co
 			// map the reads in reads buffers
 			for(i=0; i<readsNum1; i++)
 			{
-				readSeq[0] = readBuf1[i];
-				readSeq[1] = readBuf2[i];
+				readSeq[0] = pReadBuf1[i].seq;
+				readSeq[1] = pReadBuf2[i].seq;
 
 				// ####################### Debug information #######################
 				//if(readID==6947)
@@ -493,11 +493,11 @@ short mapPEFastqSeparate(const char *readSeqFile, const char *readMatchFile1, co
 				errorFlag[0] = errorFlag[1] = NO;
 
 				// check unknown bases
-				if(containUnknownBase(readSeq[0])==YES)
+				if(pReadBuf1[i].len<readLen || containUnknownBase(readSeq[0])==YES)
 				{
 					errorFlag[0] = YES;
 				}
-				if(containUnknownBase(readSeq[1])==YES)
+				if(pReadBuf2[i].len<readLen || containUnknownBase(readSeq[1])==YES)
 				{
 					errorFlag[1] = YES;
 				}
@@ -581,8 +581,8 @@ short mapPEFastqSeparate(const char *readSeqFile, const char *readMatchFile1, co
 	}
 
 	// free memory of read buffers
-	freeMemReadsBuf(&readBuf1);
-	freeMemReadsBuf(&readBuf2);
+	freeMemReadsBuf(&pReadBuf1);
+	freeMemReadsBuf(&pReadBuf2);
 
 	for(i=0; i<MAX_READ_BUF_SIZE; i++)
 	{
@@ -625,7 +625,7 @@ short mapPEFastaInterleaved(const char *readSeqFile, const char *readMatchFile1,
 	int matchFlag[2];
 	uint64_t i, j, fileID, readID;		// readID starts from 1
 
-	char **readBuf;
+	readBuf_t *pReadBuf;
 	uint64_t readsNum;
 
 	short errorFlag[2];
@@ -662,7 +662,7 @@ short mapPEFastaInterleaved(const char *readSeqFile, const char *readMatchFile1,
 	}
 
 	// initialize the memory of read buffers
-	if(initMemReadsBuf(&readBuf)==FAILED)
+	if(initMemReadsBuf(&pReadBuf)==FAILED)
 	{
 		printf("line=%d, In %s(), cannot initialize the read buffer, error!\n", __LINE__, __func__);
 		return FAILED;
@@ -710,7 +710,7 @@ short mapPEFastaInterleaved(const char *readSeqFile, const char *readMatchFile1,
 			}
 
 			// fille the reads to reads buffers
-			if(fillReadsToBufFasta(fpPE, readBuf, &readsNum)==FAILED)
+			if(fillReadsToBufFasta(fpPE, pReadBuf, &readsNum, readLen)==FAILED)
 			{
 				printf("line=%d, In %s(), cannot fill the read buffer, error!\n", __LINE__, __func__);
 				return FAILED;
@@ -719,8 +719,8 @@ short mapPEFastaInterleaved(const char *readSeqFile, const char *readMatchFile1,
 			// map the reads in reads buffers
 			for(i=0; i<readsNum; i+=2)
 			{
-				readSeq[0] = readBuf[i];
-				readSeq[1] = readBuf[i+1];
+				readSeq[0] = pReadBuf[i].seq;
+				readSeq[1] = pReadBuf[i+1].seq;
 
 				// ####################### Debug information #######################
 				//if(readID==6947)
@@ -732,11 +732,11 @@ short mapPEFastaInterleaved(const char *readSeqFile, const char *readMatchFile1,
 				errorFlag[0] = errorFlag[1] = NO;
 
 				// check unknown bases
-				if(containUnknownBase(readSeq[0])==YES)
+				if(pReadBuf[i].len<readLen || containUnknownBase(readSeq[0])==YES)
 				{
 					errorFlag[0] = YES;
 				}
-				if(containUnknownBase(readSeq[1])==YES)
+				if(pReadBuf[i+1].len<readLen || containUnknownBase(readSeq[1])==YES)
 				{
 					errorFlag[1] = YES;
 				}
@@ -818,7 +818,7 @@ short mapPEFastaInterleaved(const char *readSeqFile, const char *readMatchFile1,
 	}
 
 	// free memory of read buffers
-	freeMemReadsBuf(&readBuf);
+	freeMemReadsBuf(&pReadBuf);
 
 	for(i=0; i<MAX_READ_BUF_SIZE; i++)
 	{
@@ -861,7 +861,7 @@ short mapPEFastqInterleaved(const char *readSeqFile, const char *readMatchFile1,
 	int matchFlag[2];
 	uint64_t i, j, fileID, readID;		// readID starts from 1
 
-	char **readBuf;
+	readBuf_t *pReadBuf;
 	uint64_t readsNum;
 
 	short errorFlag[2];
@@ -898,7 +898,7 @@ short mapPEFastqInterleaved(const char *readSeqFile, const char *readMatchFile1,
 	}
 
 	// initialize the memory of read buffers
-	if(initMemReadsBuf(&readBuf)==FAILED)
+	if(initMemReadsBuf(&pReadBuf)==FAILED)
 	{
 		printf("line=%d, In %s(), cannot initialize the read buffer, error!\n", __LINE__, __func__);
 		return FAILED;
@@ -946,7 +946,7 @@ short mapPEFastqInterleaved(const char *readSeqFile, const char *readMatchFile1,
 			}
 
 			// fille the reads to reads buffers
-			if(fillReadsToBuf(fpPE, readBuf, &readsNum)==FAILED)
+			if(fillReadsToBufFastq(fpPE, pReadBuf, &readsNum, readLen)==FAILED)
 			{
 				printf("line=%d, In %s(), cannot fill the read buffer, error!\n", __LINE__, __func__);
 				return FAILED;
@@ -955,8 +955,8 @@ short mapPEFastqInterleaved(const char *readSeqFile, const char *readMatchFile1,
 			// map the reads in reads buffers
 			for(i=0; i<readsNum; i+=2)
 			{
-				readSeq[0] = readBuf[i];
-				readSeq[1] = readBuf[i+1];
+				readSeq[0] = pReadBuf[i].seq;
+				readSeq[1] = pReadBuf[i+1].seq;
 
 				// ####################### Debug information #######################
 				//if(readID==6947)
@@ -968,11 +968,11 @@ short mapPEFastqInterleaved(const char *readSeqFile, const char *readMatchFile1,
 				errorFlag[0] = errorFlag[1] = NO;
 
 				// check unknown bases
-				if(containUnknownBase(readSeq[0])==YES)
+				if(pReadBuf[i].len<readLen || containUnknownBase(readSeq[0])==YES)
 				{
 					errorFlag[0] = YES;
 				}
-				if(containUnknownBase(readSeq[1])==YES)
+				if(pReadBuf[i+1].len<readLen || containUnknownBase(readSeq[1])==YES)
 				{
 					errorFlag[1] = YES;
 				}
@@ -1054,7 +1054,7 @@ short mapPEFastqInterleaved(const char *readSeqFile, const char *readMatchFile1,
 	}
 
 	// free memory of read buffers
-	freeMemReadsBuf(&readBuf);
+	freeMemReadsBuf(&pReadBuf);
 
 	for(i=0; i<MAX_READ_BUF_SIZE; i++)
 	{
@@ -1087,11 +1087,11 @@ short mapPEFastqInterleaved(const char *readSeqFile, const char *readMatchFile1,
  *  @return:
  *  	If succeed, return SUCCESSFUL; otherwise, return FAILED.
  */
-short initMemReadsBuf(char ***pBuf)
+short initMemReadsBuf(readBuf_t **pBuf)
 {
 	uint64_t i;
 
-	*pBuf = (char**) calloc(MAX_READ_BUF_SIZE, sizeof(char*));
+	*pBuf = (readBuf_t*) calloc(MAX_READ_BUF_SIZE, sizeof(readBuf_t));
 	if(*pBuf==NULL)
 	{
 		printf("line=%d, In %s(), cannot allocate memory, error!\n", __LINE__, __func__);
@@ -1100,8 +1100,8 @@ short initMemReadsBuf(char ***pBuf)
 
 	for(i=0; i<MAX_READ_BUF_SIZE; i++)
 	{
-		(*pBuf)[i] = (char*) calloc(readLen+1, sizeof(char));
-		if((*pBuf)[i]==NULL)
+		(*pBuf)[i].seq = (char*) calloc(readLen+1, sizeof(char));
+		if((*pBuf)[i].seq==NULL)
 		{
 			printf("line=%d, In %s(), cannot allocate memory, error!\n", __LINE__, __func__);
 			return FAILED;
@@ -1114,13 +1114,13 @@ short initMemReadsBuf(char ***pBuf)
 /**
  * Release memory of reads buffer.
  */
-void freeMemReadsBuf(char ***pBuf)
+void freeMemReadsBuf(readBuf_t **pBuf)
 {
 	uint64_t i;
 	for(i=0; i<MAX_READ_BUF_SIZE; i++)
 	{
-		free((*pBuf)[i]);
-		(*pBuf)[i] = NULL;
+		free((*pBuf)[i].seq);
+		(*pBuf)[i].seq = NULL;
 	}
 
 	free(*pBuf);
@@ -1132,7 +1132,7 @@ void freeMemReadsBuf(char ***pBuf)
  *  @return:
  *  	If succeed, return SUCCESSFUL; otherwise, return FAILED.
  */
-short fillReadsToBufFasta(FILE *fpReads, char **pBuf, uint64_t *readsNum)
+short fillReadsToBufFasta(FILE *fpReads, readBuf_t *pBuf, uint64_t *readsNum, int readLenThreshold)
 {
 	uint64_t i;
 	int returnCode;
@@ -1140,7 +1140,7 @@ short fillReadsToBufFasta(FILE *fpReads, char **pBuf, uint64_t *readsNum)
 	*readsNum = 0;
 	for(i=0; i<MAX_READ_BUF_SIZE; i++)
 	{
-		returnCode = getSingleReadFasta(fpReads, pBuf[i]);
+		returnCode = getSingleReadFasta(fpReads, pBuf+i, readLenThreshold);
 		if(returnCode==FAILED)
 			break;
 		else if(returnCode==ERROR)
@@ -1160,7 +1160,7 @@ short fillReadsToBufFasta(FILE *fpReads, char **pBuf, uint64_t *readsNum)
  *  @return:
  *  	If succeed, return SUCCESSFUL; otherwise, return FAILED.
  */
-short fillReadsToBuf(FILE *fpReads, char **pBuf, uint64_t *readsNum)
+short fillReadsToBufFastq(FILE *fpReads, readBuf_t *pBuf, uint64_t *readsNum, int readLenThreshold)
 {
 	uint64_t i;
 	int returnCode;
@@ -1168,7 +1168,7 @@ short fillReadsToBuf(FILE *fpReads, char **pBuf, uint64_t *readsNum)
 	*readsNum = 0;
 	for(i=0; i<MAX_READ_BUF_SIZE; i++)
 	{
-		returnCode = getSingleReadFastq(fpReads, pBuf[i]);
+		returnCode = getSingleReadFastq(fpReads, pBuf+i, readLenThreshold);
 		if(returnCode==FAILED)
 			break;
 		else if(returnCode==ERROR)
@@ -1298,11 +1298,12 @@ short mapSingleRead(uint64_t readID, char *readSeq, int *matchFlag, FILE *fpPE_R
  *  	else if the file end is reached, return FAILED;
  *  	otherwise, return ERROR.
  */
-short getSingleReadFasta(FILE *fpPE, char *readSeq)
+short getSingleReadFasta(FILE *fpPE, readBuf_t *pBuf, int readLenThreshold)
 {
-	int i;
-	//char qual_data[5000];	// read quality data which is encoded in ASCII
-	char ch;
+	int tmpLen;
+	char ch, *readSeq;
+
+	readSeq = pBuf->seq;
 
 	ch = fgetc(fpPE);
 	if(feof(fpPE))// the file end is reached.
@@ -1312,23 +1313,24 @@ short getSingleReadFasta(FILE *fpPE, char *readSeq)
 
 	while(!feof(fpPE))
 	{
-		i = 0;
 		ch = fgetc(fpPE);
 		while(ch!='\n') ch = fgetc(fpPE);
 
+		tmpLen = 0;
 		while(ch!='>' && ch!=-1)
 		{
 			if(ch!='\n')
 			{
-				if(i<readLen)
-					readSeq[i++] = ch;
+				if(tmpLen<readLenThreshold)
+					readSeq[tmpLen++] = ch;
 			}
 			ch = fgetc(fpPE);
 		}
-		readSeq[i] = '\0';
+		readSeq[tmpLen] = '\0';
 
 		if(ch=='>')  //a read is read finished
 		{
+			pBuf->len = tmpLen;
 			break;
 		}
 	}
@@ -1344,10 +1346,12 @@ short getSingleReadFasta(FILE *fpPE, char *readSeq)
  *  	else if the file end is reached, return FAILED;
  *  	otherwise, return ERROR.
  */
-short getSingleReadFastq(FILE *fpPE, char *readSeq)
+short getSingleReadFastq(FILE *fpPE, readBuf_t *pBuf, int readLenThreshold)
 {
-	unsigned short i, line_index = 0;
-	//char qual_data[5000];	// read quality data which is encoded in ASCII
+	unsigned int tmpLen, line_index;
+	char *readSeq;
+
+	readSeq = pBuf->seq;
 
 	char ch = fgetc(fpPE);
 	if(feof(fpPE))// the file end is reached.
@@ -1355,6 +1359,7 @@ short getSingleReadFastq(FILE *fpPE, char *readSeq)
 		return FAILED;
 	}
 
+	line_index = 0;
 	while(!feof(fpPE))
 	{
 		if(line_index==0)  //the sequence name line
@@ -1364,15 +1369,15 @@ short getSingleReadFastq(FILE *fpPE, char *readSeq)
 				ch = fgetc(fpPE);
 		}else if(line_index==1)  //the sequence line
 		{
-			i = 0;
+			tmpLen = 0;
 			ch = fgetc(fpPE);
 			while(ch!='\n')
 			{
-				if(i<readLen)
-					readSeq[i++] = ch;
+				if(tmpLen<readLenThreshold)
+					readSeq[tmpLen++] = ch;
 				ch = fgetc(fpPE);
 			}
-			readSeq[i] = '\0';
+			readSeq[tmpLen] = '\0';
 		}else if(line_index==2)  //the sequence name line
 		{
 			ch = fgetc(fpPE);
@@ -1380,19 +1385,15 @@ short getSingleReadFastq(FILE *fpPE, char *readSeq)
 				ch = fgetc(fpPE);
 		}else
 		{
-			//i = 0;
 			ch = fgetc(fpPE);
 			while(ch!='\n'  && ch!=-1)
-			{
-				//qual_data[i++] = ch;
 				ch = fgetc(fpPE);
-			}
-			//qual_data[i] = '\0';
 		}
 		line_index++;
 
 		if(line_index==4)  //a read is read finished
 		{
+			pBuf->len = tmpLen;
 			break;
 		}
 	}

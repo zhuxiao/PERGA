@@ -55,6 +55,13 @@ typedef struct sortKmernode
 
 
 //====================structure for matching =================
+typedef struct readBufNode{
+	char *seq;
+	//char *qual;
+	int len;
+}readBuf_t;
+
+
 // temporary match information of read
 typedef struct readMatchInfoTempNode
 {
