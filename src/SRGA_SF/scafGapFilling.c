@@ -658,7 +658,7 @@ short localAssemblyInScaf()
 
 				//###################### Debug information #####################
 #if DEBUG_FLAG
-				if(contigID[0]==2 && contigID[1]==3)
+				if(contigID[0]==42 && contigID[1]==52)
 				//if(contigID[0]==602 && contigID[1]==2445)
 				{
 					printf("line=%d, In %s(), contigID1=%d, contigOrient1=%d, contigLen1=%d, contigID2=%d, contigOrient2=%d, contigLen2=%d, gapSize=%d\n", __LINE__, __func__, contigID[0], contigOrient[0], contigLen[0], contigID[1], contigOrient[1], contigLen[1], gapSize);
@@ -3726,7 +3726,11 @@ short detectOverlapsInScaf(int *successFilledFlag, int *overlapLen, int *newGapS
 					*overlapLen = 0;
 					*newGapSize = tmpGapSize;
 					*successFilledFlag = NO;
-					*breakFlag = NO;
+
+					if(tmpGapSize<-0.5*meanSizeInsert)
+						*breakFlag = YES;
+					else
+						*breakFlag = NO;
 
 				}else if(tmpGapSize<maxAdjustGapSizeThres)
 				{ // -10 =< gapSize < 10

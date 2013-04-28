@@ -1035,7 +1035,7 @@ short linkContigs(const char *linkResultFile)
 		//############################ Debug information ######################
 #if DEBUG_FLAG
 		printf("============ Begin linking scaffolds: %d ============\n", linkID);
-		if(linkID==6)
+		if(linkID==9)
 		{
 			printf("$$$$$$$$$$$$$$$$$$$$$ linkID=%d!\n", linkID);
 		}
@@ -1626,7 +1626,8 @@ short getFirstLinkedContigs(int *firstContigID, maxRowCol *pMaxRowColNode, conti
 	while((*firstContigID) <= tmpContigsNum)
 	{
 		//if(contigInfoArray[(*firstContigID)-1].used==0 && contigInfoArray[(*firstContigID)-1].onlyEnd5==NO)
-		if(contigInfoArray[(*firstContigID)-1].used==0 && contigInfoArray[(*firstContigID)-1].shortFlag==NO)
+		//if(contigInfoArray[(*firstContigID)-1].used==0 && contigInfoArray[(*firstContigID)-1].shortFlag==NO)
+		if(contigInfoArray[(*firstContigID)-1].used==0 && contigInfoArray[(*firstContigID)-1].shortFlag==NO && contigInfoArray[(*firstContigID)-1].onlyEnd5==NO)
 		{ // the first contig is unused and not too short
 
 			pMaxRowColNode->maxRow = (*firstContigID) * 2 - 1;
@@ -1655,8 +1656,12 @@ short getFirstLinkedContigs(int *firstContigID, maxRowCol *pMaxRowColNode, conti
 					{
 						returnCode = isLinkSingleton(pMaxRowColNode, pContigGraphArray, FIRST_LINK_ROUND);
 						if(returnCode==YES)
-							satisfiedFlag = YES;
-						else if(returnCode==NO)
+						{
+							if((contigInfoArray[pMaxRowColNode->contigID1-1].contigLen<5*contigEndLen || contigInfoArray[pMaxRowColNode->contigID2-1].contigLen<5*contigEndLen) && pMaxRowColNode->maxValue>2*averLinkNum)
+								satisfiedFlag = NO;
+							else
+								satisfiedFlag = YES;
+						}else if(returnCode==NO)
 							satisfiedFlag = NO;
 						else
 						{
@@ -1729,7 +1734,8 @@ short isLinkSingleton(maxRowCol *pMaxRowColNode, ContigGraph *pContigGraphArray,
 				//if(pEdgeArray[j].col != maxRow && pEdgeArray[j].validNums[pEdgeArray[j].maxIndexes[0]] >= minLinksNumContigsThres*secondLinkNumFactor)
 				//if(pEdgeArray[j].col != maxRow && pEdgeArray[j].validNums[pEdgeArray[j].maxIndexes[0]] >= maxSecondLinkNumThres)
 				//if(pEdgeArray[j].col != maxRow && pEdgeArray[j].validNums[pEdgeArray[j].maxIndexes[0]] >= minLinksNumContigsThres)
-				if(singletonFlag==YES && pEdgeArray[j].col != maxRow && pEdgeArray[j].validNums[pEdgeArray[j].maxIndexes[0]] > 0)  // added 2012-11-21
+				//if(singletonFlag==YES && pEdgeArray[j].col != maxRow && pEdgeArray[j].validNums[pEdgeArray[j].maxIndexes[0]] > 0)  // added 2012-11-21
+				if(singletonFlag==YES && pEdgeArray[j].col != maxRow && pEdgeArray[j].validNums[pEdgeArray[j].maxIndexes[0]] > maxSecondLinkNumThres)  // added 2012-11-21
 				{
 					singletonFlag = NO;
 				}
@@ -1761,7 +1767,8 @@ short isLinkSingleton(maxRowCol *pMaxRowColNode, ContigGraph *pContigGraphArray,
 				//if(pEdgeArray[j].col != maxCol && pEdgeArray[j].validNums[pEdgeArray[j].maxIndexes[0]] >= minLinksNumContigsThres*secondLinkNumFactor)
 				//if(pEdgeArray[j].col != maxCol && pEdgeArray[j].validNums[pEdgeArray[j].maxIndexes[0]] >= maxSecondLinkNumThres)
 				//if(pEdgeArray[j].col != maxCol && pEdgeArray[j].validNums[pEdgeArray[j].maxIndexes[0]] >= minLinksNumContigsThres)
-				if(singletonFlag==YES && pEdgeArray[j].col != maxCol && pEdgeArray[j].validNums[pEdgeArray[j].maxIndexes[0]] > 0)  // added 2012-11-21
+				//if(singletonFlag==YES && pEdgeArray[j].col != maxCol && pEdgeArray[j].validNums[pEdgeArray[j].maxIndexes[0]] > 0)  // added 2012-11-21
+				if(singletonFlag==YES && pEdgeArray[j].col != maxCol && pEdgeArray[j].validNums[pEdgeArray[j].maxIndexes[0]] > maxSecondLinkNumThres)  // added 2012-11-21
 				{
 					singletonFlag = NO;
 				}

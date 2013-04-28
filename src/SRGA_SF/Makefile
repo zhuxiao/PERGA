@@ -1,4 +1,4 @@
-SRGA_SF: scafMain.o scafSRGA.o scafContig.o scafContigIndex.o scafMapping.o \
+srga_sf: scafMain.o scafSRGA.o scafContig.o scafContigIndex.o scafMapping.o \
 	scafReadList.o scafContigList.o scafContigLinking.o scafContigOverlap.o \
 	scafGraph.o scafGapFilling.o scafUpdate.o scafPEAssembly.o scafContigMerge.o \
 	util.o

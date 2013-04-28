@@ -2,9 +2,8 @@ SRGA - Sequence Reads Guided Assembler
 ============================
 
 
-SRGA is a sequence reads guided assembler that combined de Bruijn graph strategy and
-overlap strategy together to perform the assembly by using read overlaps represented
-by their overlapping k-mers.
+SRGA is a a novel sequence reads guided de novo assembly approach which adopts greedy-like prediction strategy for assembling reads to contigs and scaffolds. Instead of using single-end reads to construct contig, SRGA uses paired-end reads and different read overlap sizes from O ≥ Omax to Omin to resolve the gaps and branches. Moreover, by constructing a decision model using machine learning approach based on branch features, SRGA can determine the correct extension in 99.7% of cases. SRGA will also try to extend the contigs by all feasible nucleotides and determine if these multiple extensions due to sequencing errors or repeats by using looking ahead technology.
+
 
 
 -------------
