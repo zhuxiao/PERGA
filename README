@@ -19,10 +19,10 @@ Compiling SRGA
 You can generate the binary file by typing:
 ./autogen.sh
 
-and the binary files will be output into the folder 'bin'.
+and the binary files and the navigation model will be output into the folder 'bin'.
 
 -------------
 See user manual in [SRGA_Manual.pdf] in the archive.
 
-And report bugs or give suggestions to ydwang@hit.edu.cn, zhuxiao.hit@gmail.com.
+And report bugs or give suggestions to ydwang@hit.edu.cn.
 
