@@ -1,11 +1,11 @@
 #!/bin/sh
 	mkdir bin
-	cd src/SRGA
+	cd src/PERGA
 	make
-	mv -f srga ../../bin
+	mv -f perga ../../bin
 	cp -r model ../../bin
-	cd ../../src/SRGA_SF
+	cd ../../src/PERGA_SF
 	make
-	mv -f srga_sf ../../bin
+	mv -f perga_sf ../../bin
 	cd ../../
 	
