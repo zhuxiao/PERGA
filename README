@@ -9,8 +9,9 @@ The simulated paired-end reads data are generated using GemSim (KE McElroy, F Lu
 The real paired-end reads data can be downloaded from http://bix.ucsd.edu/projects/singlecell/nbt_data.html, with standard genomic DNA prepared from culture, with coverage ~600x. The downloaded paired ends of file 'ecoli_ref.fastq' were separated into two reads files 'ecoli_ref_1.fastq' and 'ecoli_ref_2.fastq'. The real data were corrected using Quake (DR Kelley, MC Schatz, SL Salzberg. Quake: Quality-Aware Detection and Correction of Sequencing Errors. Genome Biol 2010, 11(11):-) by the follwing commands:
 	(1) $ cat ecoli_ref_1.fastq ecoli_ref_2.fastq | count-qmers -k 15 -q 33 > count_file_ecoli_ref
 	(2) $ cov_model.py count_file_ecoli_ref
-	(3) $ correct -f -f readsfiles_ecoli_ref -k 15 -c 25 -m count_file_ecoli_ref -p 8
-where, 'readsfiles_ecoli_ref' contained the two paired end files 'ecoli_ref_1.fastq' and 'ecoli_ref_2.fastq' which were separated by the tab character in a single line.
+	(3) $ correct -f readsfiles_ecoli_ref -k 15 -c 25 -m count_file_ecoli_ref -p 8
+where, 'readsfiles_ecoli_ref' contained the two paired end files 'ecoli_ref_1.fastq' and 'ecoli_ref_2.fastq' and were separated by the tab character in a single line as following:
+ecoli_ref_1.fastq	ecoli_ref_2.fastq
 
 The corrected reads data are used to do the assembly.
 
