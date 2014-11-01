@@ -6,9 +6,6 @@ PERGA is a novel sequence reads guided de novo assembly approach which adopts gr
 
 The simulated E.coli paired-end reads data are generated using GemSim (KE McElroy, F Luciani, T Thomas. Gemsim: General, Error-Model Based Simulator of Next-Generation Sequencing Data. BMC Genomics 2012, 13:74), with coverage 50x, 60x, 100x, read lengths 100-bp, and can be downloaded from https://github.com/zhuxiao/data_PERGA.
 
-Assembly command:
-$ ./perga all -f reads_pe.fastq -p 2 -d outDir
-
 Typically, we will just need to specify the paired-end reads data “reads_pe.fastq” by using this command:
 $ ./perga all -f reads_pe.fastq -p 2 -d outDir
 and then “contigs.fa” and “scaffolds.fa” will be produced in the directory “outDir” after assembly.
