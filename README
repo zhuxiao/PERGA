@@ -9,7 +9,7 @@ The simulated E.coli paired-end reads data are generated using GemSim (KE McElro
 Assembly command:
 $ ./perga all -f reads_pe.fastq -p 2 -d outDir
 
-Typically, we will just need to specify the paired-end reads data “reads_pe.fastq” by using above command, and then “contigs.fa” and “scaffolds.fa” will be produced in the directory “outDir” after assembly.
+Typically, we will just need to specify the paired-end reads data 'reads_pe.fastq' by using above command, and then 'contigs.fa' and 'scaffolds.fa' will be produced in the directory 'outDir' after assembly.
 
 
 -------------
