@@ -11,7 +11,7 @@ $ ./perga all -f reads_pe.fastq -p 2 -d outDir
 
 Typically, we will just need to specify the paired-end reads data 'reads_pe.fastq' by using above command, and then 'contigs.fa' and 'scaffolds.fa' will be produced in the directory 'outDir' after assembly.
 
-Before running PERGA, we recommend performing the error correction using some software, such as Quake (Kelley at al., 2010), Coral (Salmela et al., 2011), etc.
+Before running PERGA, we recommend performing the error correction using some software, such as Quake (Kelley et al., 2010), Coral (Salmela et al., 2011), etc.
 
 -------------
 Compiling PERGA
